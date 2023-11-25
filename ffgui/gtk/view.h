@@ -165,6 +165,15 @@ static inline void ffui_view_clear(ffui_view *v) {
 #define ffui_view_selall(v)  gtk_tree_selection_select_all(gtk_tree_view_get_selection(GTK_TREE_VIEW((v)->h)))
 #define ffui_view_unselall(v)  gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(GTK_TREE_VIEW((v)->h)))
 
+static inline void ffui_view_select_single(ffui_view *v, uint pos) {
+	GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW((v)->h));
+	gtk_tree_selection_unselect_all(sel);
+
+	GtkTreeIter iter;
+	if (gtk_tree_model_iter_nth_child(GTK_TREE_MODEL(v->store), &iter, NULL, pos))
+		gtk_tree_selection_select_iter(sel, &iter);
+}
+
 typedef struct ffui_sel {
 	ffsize len;
 	char *ptr;

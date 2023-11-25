@@ -86,12 +86,14 @@ struct ffui_viewxx : ffui_view {
 
 	ffslice	selected() { return ffui_view_selected(this); }
 	int		selected_first() { return ffui_view_selected_first(this); }
+	void	select(uint pos) { ffui_post_view_select_single(this, pos); }
 
 	ffui_viewcolxx& column(int pos, ffui_viewcolxx *vc) { ffui_view_col(this, pos, &vc->vc); return *vc; }
 	void	column(uint pos, ffui_viewcolxx &vc) { ffui_view_setcol(this, pos, &vc.vc); }
 
 	uint	scroll_vert() { return ffui_send_view_scroll(this); }
 	void	scroll_vert(uint val) { ffui_post_view_scroll_set(this, val); }
+	void	scroll_index(uint i) { ffui_view_scroll_idx(this, i); }
 
 #ifdef FF_LINUX
 	void	drag_drop_init(uint action_id) { ffui_view_dragdrop(this, action_id); }

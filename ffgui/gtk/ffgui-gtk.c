@@ -708,6 +708,9 @@ static gboolean _ffui_send_handler(gpointer data)
 		break;
 	}
 
+	case FFUI_VIEW_SEL_SINGLE:
+		ffui_view_select_single((ffui_view*)c->ctl, (ffsize)c->udata);  break;
+
 
 	case FFUI_TRK_SETRANGE:
 		ffui_track_setrange((ffui_trackbar*)c->ctl, (ffsize)c->udata);  break;

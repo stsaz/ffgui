@@ -112,6 +112,7 @@ enum FFUI_MSG {
 	FFUI_VIEW_SCROLL,
 	FFUI_VIEW_SCROLLSET,
 	FFUI_VIEW_SETDATA,
+	FFUI_VIEW_SEL_SINGLE,
 	FFUI_WND_SETTEXT,
 	FFUI_WND_SHOW,
 };
@@ -154,6 +155,9 @@ static inline void ffui_post_view_setdata(ffui_view *v, uint first, int delta) {
 	ffsize p = ((first & 0xffff) << 16) | (delta & 0xffff);
 	ffui_post(v, FFUI_VIEW_SETDATA, (void*)p);
 }
+
+#define ffui_post_view_select_single(v, pos)  ffui_post(v, FFUI_VIEW_SEL_SINGLE, (void*)(size_t)pos)
+
 #define ffui_post_track_range_set(ctl, range)  ffui_post(ctl, FFUI_TRK_SETRANGE, (void*)(ffsize)range)
 #define ffui_post_track_set(ctl, val)  ffui_post(ctl, FFUI_TRK_SET, (void*)(ffsize)val)
 

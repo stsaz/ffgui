@@ -70,7 +70,7 @@ static inline int ffui_view_hittest(ffui_view *v, const ffui_point *pt, int *sub
 #define ffui_view_topindex(v)  ffui_ctl_send(v, LVM_GETTOPINDEX, 0, 0)
 #define ffui_send_view_scroll(v)  ffui_ctl_send(v, LVM_GETTOPINDEX, 0, 0)
 
-#define ffui_view_makevisible(v, idx)  ffui_ctl_send(v, LVM_ENSUREVISIBLE, idx, /*partial_ok*/ 0)
+#define ffui_view_scroll_idx(v, idx)  ffui_ctl_send(v, LVM_ENSUREVISIBLE, idx, /*partial_ok*/ 0)
 #define ffui_post_view_scroll_set(v, idx)  ffui_ctl_send(v, LVM_ENSUREVISIBLE, idx, /*partial_ok*/ 0)
 #define ffui_view_scroll(v, dx, dy)  ffui_ctl_send(v, LVM_SCROLL, dx, dy)
 
@@ -295,7 +295,7 @@ do { \
 	(it)->item.state |= (focus) ? LVIS_FOCUSED : 0; \
 } while (0)
 
-#define ffui_view_select(it, select) \
+#define ffui_viewitem_select(it, select) \
 do { \
 	(it)->item.mask |= LVIF_STATE; \
 	(it)->item.stateMask |= LVIS_SELECTED; \
@@ -415,7 +415,7 @@ FF_EXTERN int ffui_view_search(ffui_view *v, ffsize by);
 #define ffui_view_selcount(v)  ffui_ctl_send(v, LVM_GETSELECTEDCOUNT, 0, 0)
 #define ffui_view_selnext(v, from)  ffui_ctl_send(v, LVM_GETNEXTITEM, from, LVNI_SELECTED)
 #define ffui_view_selected_first(v)  ffui_ctl_send(v, LVM_GETNEXTITEM, -1, LVNI_SELECTED)
-#define ffui_view_sel(v, i)  ListView_SetItemState((v)->h, i, LVIS_SELECTED, LVIS_SELECTED)
+#define ffui_view_select(v, i)  ListView_SetItemState((v)->h, i, LVIS_SELECTED, LVIS_SELECTED)
 #define ffui_view_unsel(v, i)  ListView_SetItemState((v)->h, i, 0, LVIS_SELECTED)
 
 static inline ffslice ffui_view_selected(ffui_view *c) {ffvec sel = {};
@@ -426,7 +426,12 @@ static inline ffslice ffui_view_selected(ffui_view *c) {ffvec sel = {};
 	return *(ffslice*)&sel;
 }
 
-#define ffui_view_selall(v)  ffui_view_sel(v, -1)
+static inline void ffui_post_view_select_single(ffui_view *v, uint pos) {
+	ListView_SetItemState(v->h, -1, 0, LVIS_SELECTED);
+	ListView_SetItemState(v->h, pos, LVIS_SELECTED, LVIS_SELECTED);
+}
+
+#define ffui_view_selall(v)  ffui_view_select(v, -1)
 #define ffui_view_unselall(v)  ffui_view_unsel(v, -1)
 FF_EXTERN int ffui_view_sel_invert(ffui_view *v);
 

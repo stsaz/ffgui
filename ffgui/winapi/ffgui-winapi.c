@@ -701,14 +701,14 @@ int ffui_view_sel_invert(ffui_view *v)
 
 	for (i = 0;  ;  i++) {
 		ffui_view_setindex(&it, i);
-		ffui_view_select(&it, 0);
+		ffui_viewitem_select(&it, 0);
 		if (0 != ffui_view_get(v, 0, &it))
 			break;
 
 		if (ffui_viewitem_selected(&it)) {
-			ffui_view_select(&it, 0);
+			ffui_viewitem_select(&it, 0);
 		} else {
-			ffui_view_select(&it, 1);
+			ffui_viewitem_select(&it, 1);
 			cnt++;
 		}
 
