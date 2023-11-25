@@ -33,6 +33,8 @@ typedef struct ffui_icon {
 	GdkPixbuf *ico;
 } ffui_icon;
 
+#define ffui_icon_valid(ico)  (!!(ico)->ico)
+
 static inline int ffui_icon_load(ffui_icon *ico, const char *filename) {
 	ico->ico = gdk_pixbuf_new_from_file(filename, NULL);
 	return (ico->ico == NULL);
@@ -98,6 +100,7 @@ enum FFUI_MSG {
 	FFUI_CLIP_SETTEXT,
 	FFUI_EDIT_GETTEXT,
 	FFUI_LBL_SETTEXT,
+	FFUI_BUTTON_SETICON,
 	FFUI_STBAR_SETTEXT,
 	FFUI_TAB_ACTIVE,
 	FFUI_TAB_COUNT,
@@ -127,6 +130,7 @@ FF_EXTERN ffsize ffui_send(void *ctl, uint id, void *udata);
 #define ffui_send_edit_textstr(ctl, str_dst)  ffui_send(ctl, FFUI_EDIT_GETTEXT, str_dst)
 #define ffui_send_text_settextstr(ctl, str)  ffui_send(ctl, FFUI_TEXT_SETTEXT, (void*)str)
 #define ffui_send_text_addtextstr(ctl, str)  ffui_send(ctl, FFUI_TEXT_ADDTEXT, (void*)str)
+#define ffui_send_button_seticon(b, ico)  ffui_send(b, FFUI_BUTTON_SETICON, (void*)ico)
 #define ffui_send_checkbox_settextz(ctl, sz)  ffui_send(ctl, FFUI_CHECKBOX_SETTEXTZ, (void*)sz)
 #define ffui_send_wnd_settext(ctl, sz)  ffui_send(ctl, FFUI_WND_SETTEXT, (void*)sz)
 #define ffui_post_wnd_show(ctl, show)  ffui_send(ctl, FFUI_WND_SHOW, (void*)(ffsize)show)

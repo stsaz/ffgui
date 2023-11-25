@@ -24,7 +24,7 @@ static inline void ffui_button_settextstr(ffui_button *b, const ffstr *text) {
 	ffmem_free(sz);
 }
 
-static inline void ffui_button_seticon(ffui_button *b, ffui_icon *ico) {
+static inline void ffui_button_seticon(ffui_button *b, const ffui_icon *ico) {
 	GtkWidget *img = gtk_image_new();
 	gtk_image_set_from_pixbuf(GTK_IMAGE(img), ico->ico);
 	gtk_button_set_image(GTK_BUTTON(b->h), img);

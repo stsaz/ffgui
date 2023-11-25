@@ -678,6 +678,10 @@ static gboolean _ffui_send_handler(gpointer data)
 		ffui_text_addtextstr((ffui_text*)c->ctl, (ffstr*)c->udata);  break;
 
 
+	case FFUI_BUTTON_SETICON:
+		ffui_button_seticon(c->ctl, c->udata);  break;
+
+
 	case FFUI_CHECKBOX_SETTEXTZ:
 		ffui_checkbox_settextz((ffui_checkbox*)c->ctl, c->udata);  break;
 

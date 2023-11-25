@@ -20,6 +20,9 @@ struct ffui_editxx : ffui_edit {
 
 struct ffui_buttonxx : ffui_button {
 	void	text(const char *sz) { ffui_button_settextz(this, sz); }
+
+	void	icon(const ffui_icon& ico) { ffui_send_button_seticon(this, &ico); }
+
 	void	enable(bool val) { ffui_ctl_enable(this, val); }
 };
 

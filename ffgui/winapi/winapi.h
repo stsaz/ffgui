@@ -122,6 +122,8 @@ typedef struct ffui_icon {
 	HICON h;
 } ffui_icon;
 
+#define ffui_icon_valid(ico)  (!!(ico)->h)
+
 #define ffui_icon_destroy(ico)  DestroyIcon((ico)->h)
 
 enum FFUI_ICON_FLAGS {
