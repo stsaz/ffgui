@@ -18,6 +18,10 @@ struct ffui_editxx : ffui_edit {
 	void	focus() { ffui_ctl_focus(this); }
 };
 
+struct ffui_textxx : ffui_text {
+	void	add(ffstr s) { ffui_text_addtextstr(this, &s); }
+};
+
 struct ffui_buttonxx : ffui_button {
 	void	text(const char *sz) { ffui_button_settextz(this, sz); }
 
