@@ -53,7 +53,7 @@ struct ffui_trackbarxx : ffui_trackbar {
 
 struct ffui_tabxx : ffui_tab {
 	void	add(const char *sz) { ffui_send_tab_ins(this, sz); }
-	void	del(uint i) { ffui_tab_del(this, i); }
+	void	del(uint i) { ffui_post_tab_del(this, i); }
 	void	select(uint i) { ffui_send_tab_setactive(this, i); }
 	uint	changed() { return ffui_tab_changed_index(this); }
 	uint	count() { return ffui_tab_count(this); }
@@ -108,7 +108,7 @@ struct ffui_viewxx : ffui_view {
 };
 
 struct ffui_windowxx : ffui_window {
-	void	show(bool show) { ffui_show(this, show); }
+	void	show(bool show) { ffui_post_wnd_show(this, show); }
 	void	title(const char *sz) { ffui_send_wnd_settext(this, sz); }
 	void	close() { ffui_wnd_close(this); }
 

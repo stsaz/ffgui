@@ -24,6 +24,7 @@ FF_EXTERN int ffui_tab_create(ffui_tab *t, ffui_window *parent);
 #define ffui_tab_count(t)  ffui_ctl_send(t, TCM_GETITEMCOUNT, 0, 0)
 
 #define ffui_tab_del(t, idx)  ffui_ctl_send(t, TCM_DELETEITEM, idx, 0)
+#define ffui_post_tab_del(t, idx)  ffui_ctl_send(t, TCM_DELETEITEM, idx, 0)
 #define ffui_tab_clear(t)  ffui_ctl_send(t, TCM_DELETEALLITEMS, 0, 0)
 
 typedef struct ffui_tabitem {

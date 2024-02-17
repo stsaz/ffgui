@@ -726,6 +726,9 @@ static gboolean _ffui_send_handler(gpointer data)
 	case FFUI_TAB_INS:
 		ffui_tab_append((ffui_tab*)c->ctl, c->udata);  break;
 
+	case FFUI_TAB_DEL:
+		ffui_tab_del((ffui_tab*)c->ctl, (ffsize)c->udata);  break;
+
 	case FFUI_TAB_SETACTIVE:
 		ffui_tab_setactive((ffui_tab*)c->ctl, (ffsize)c->udata);  break;
 

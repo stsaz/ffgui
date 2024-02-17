@@ -105,6 +105,7 @@ enum FFUI_MSG {
 	FFUI_TAB_ACTIVE,
 	FFUI_TAB_COUNT,
 	FFUI_TAB_INS,
+	FFUI_TAB_DEL,
 	FFUI_TAB_SETACTIVE,
 	FFUI_TEXT_ADDTEXT,
 	FFUI_TEXT_SETTEXT,
@@ -166,6 +167,7 @@ static inline void ffui_post_view_setdata(ffui_view *v, uint first, int delta) {
 #define ffui_post_track_set(ctl, val)  ffui_post(ctl, FFUI_TRK_SET, (void*)(ffsize)val)
 
 #define ffui_send_tab_ins(ctl, textz)  ffui_send(ctl, FFUI_TAB_INS, (void*)textz)
+#define ffui_post_tab_del(ctl, idx)  ffui_post(ctl, FFUI_TAB_DEL, (void*)(ffsize)idx)
 #define ffui_send_tab_setactive(ctl, idx)  ffui_send(ctl, FFUI_TAB_SETACTIVE, (void*)(ffsize)idx)
 static inline int ffui_send_tab_active(ffui_tab *ctl) {
 	ffsize idx;

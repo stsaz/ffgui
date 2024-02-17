@@ -278,6 +278,7 @@ static inline int ffui_settext(void *c, const char *text, ffsize len) {
 FF_EXTERN int ffui_textstr(void *_c, ffstr *dst);
 
 #define ffui_show(c, show)  ShowWindow((c)->h, (show) ? SW_SHOW : SW_HIDE)
+#define ffui_post_wnd_show(c, show)  ShowWindow((c)->h, (show) ? SW_SHOW : SW_HIDE)
 
 #define ffui_redraw(c, redraw)  ffui_ctl_send(c, WM_SETREDRAW, redraw, 0)
 
