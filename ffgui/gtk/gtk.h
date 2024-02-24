@@ -99,6 +99,9 @@ enum FFUI_MSG {
 	FFUI_CHECKBOX_CHECKED,
 	FFUI_CLIP_SETTEXT,
 	FFUI_EDIT_GETTEXT,
+	FFUI_EDIT_SETTEXT,
+	FFUI_TEXT_ADDTEXT,
+	FFUI_TEXT_SETTEXT,
 	FFUI_LBL_SETTEXT,
 	FFUI_BUTTON_SETICON,
 	FFUI_STBAR_SETTEXT,
@@ -107,8 +110,6 @@ enum FFUI_MSG {
 	FFUI_TAB_INS,
 	FFUI_TAB_DEL,
 	FFUI_TAB_SETACTIVE,
-	FFUI_TEXT_ADDTEXT,
-	FFUI_TEXT_SETTEXT,
 	FFUI_CTL_ENABLE,
 	FFUI_TRK_SET,
 	FFUI_TRK_SETRANGE,
@@ -129,6 +130,7 @@ FF_EXTERN ffsize ffui_send(void *ctl, uint id, void *udata);
 #define ffui_post_quitloop()  ffui_post(NULL, FFUI_QUITLOOP, NULL)
 #define ffui_send_label_settext(ctl, sz)  ffui_send(ctl, FFUI_LBL_SETTEXT, (void*)sz)
 #define ffui_send_edit_textstr(ctl, str_dst)  ffui_send(ctl, FFUI_EDIT_GETTEXT, str_dst)
+#define ffui_send_edit_settextstr(ctl, str)  ffui_send(ctl, FFUI_EDIT_SETTEXT, str)
 #define ffui_send_text_settextstr(ctl, str)  ffui_send(ctl, FFUI_TEXT_SETTEXT, (void*)str)
 #define ffui_send_text_addtextstr(ctl, str)  ffui_send(ctl, FFUI_TEXT_ADDTEXT, (void*)str)
 #define ffui_send_button_seticon(b, ico)  ffui_send(b, FFUI_BUTTON_SETICON, (void*)ico)

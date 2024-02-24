@@ -35,8 +35,6 @@ enum {
 };
 static uint _ffui_flags;
 
-static HWND create(enum FFUI_UID uid, const wchar_t *text, HWND parent, const ffui_pos *r, uint style, uint exstyle, void *param);
-static int ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent);
 static void getpos_noscale(HWND h, ffui_pos *r);
 static int setpos_noscale(void *ctl, int x, int y, int cx, int cy, int flags);
 static HWND base_parent(HWND h);
@@ -312,7 +310,7 @@ void ffui_getpos2(void *ctl, ffui_pos *r, uint flags)
 	}
 }
 
-static HWND create(enum FFUI_UID uid, const wchar_t *text, HWND parent, const ffui_pos *r, uint style, uint exstyle, void *param)
+static HWND hwnd_create(enum FFUI_UID uid, const wchar_t *text, HWND parent, const ffui_pos *r, uint style, uint exstyle, void *param)
 {
 	HINSTANCE inst = NULL;
 	if (uid == FFUI_UID_WINDOW)
@@ -323,11 +321,11 @@ static HWND create(enum FFUI_UID uid, const wchar_t *text, HWND parent, const ff
 		, parent, NULL, inst, param);
 }
 
-int _ffui_ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent, uint style, uint exstyle)
+static int ctl_create_f(ffui_ctl *c, enum FFUI_UID uid, HWND parent, uint style, uint exstyle)
 {
 	ffui_pos r = {};
 	c->uid = uid;
-	if (0 == (c->h = create(uid, L"", parent, &r
+	if (0 == (c->h = hwnd_create(uid, L"", parent, &r
 		, ctls[uid].style | WS_CHILD | style
 		, ctls[uid].exstyle | exstyle
 		, NULL)))
@@ -338,7 +336,7 @@ int _ffui_ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent, uint style, ui
 
 static int ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent)
 {
-	return _ffui_ctl_create(c, uid, parent, 0, 0);
+	return ctl_create_f(c, uid, parent, 0, 0);
 }
 
 int ffui_ctl_destroy(void *_c)
@@ -659,7 +657,7 @@ int ffui_tab_create(ffui_tab *t, ffui_window *parent)
 int ffui_view_create(ffui_view *c, ffui_window *parent)
 {
 	uint s = (c->dispinfo_id != 0) ? LVS_OWNERDATA : 0;
-	if (0 != _ffui_ctl_create((ffui_ctl*)c, FFUI_UID_LISTVIEW, parent->h, s, 0))
+	if (0 != ctl_create_f((ffui_ctl*)c, FFUI_UID_LISTVIEW, parent->h, s, 0))
 		return 1;
 
 	if (c->dispinfo_id != 0)
@@ -742,7 +740,7 @@ int ffui_view_edit_hittest(ffui_view *v, uint sub)
 
 int ffui_tree_create(ffui_tree *t, ffui_window *parent)
 {
-	if (0 != _ffui_ctl_create((ffui_ctl*)t, FFUI_UID_TREEVIEW, parent->h, 0, 0))
+	if (0 != ctl_create_f((ffui_ctl*)t, FFUI_UID_TREEVIEW, parent->h, 0, 0))
 		return 1;
 
 #if FF_WIN >= 0x0600
@@ -935,7 +933,7 @@ int ffui_wnd_create(ffui_window *w)
 	w->color = ~0U;
 	if (w->on_action == NULL)
 		w->on_action = &wnd_onaction;
-	return 0 == create(FFUI_UID_WINDOW, L"", NULL, &r
+	return 0 == hwnd_create(FFUI_UID_WINDOW, L"", NULL, &r
 		, ctls[FFUI_UID_WINDOW].style | WS_OVERLAPPEDWINDOW
 		, ctls[FFUI_UID_WINDOW].exstyle | 0
 		, w);

@@ -22,9 +22,11 @@ static inline ffstr ffui_edit_text(ffui_edit *e) {
 	ffui_textstr(e, &s);
 	return s;
 }
+#define ffui_send_edit_textstr(e, strp)  ffui_textstr(e, strp)
 
 #define ffui_edit_settextz(c, sz)  ffui_settext(c, sz, ffsz_len(sz))
 #define ffui_edit_settextstr(e, str)  ffui_settext(e, (str)->ptr, (str)->len)
+#define ffui_send_edit_settextstr(e, str)  ffui_settext(e, (str)->ptr, (str)->len)
 
 #define ffui_edit_password(e, enable) \
 	ffui_ctl_send(e, EM_SETPASSWORDCHAR, (enable) ? (wchar_t)0x25CF : 0, 0)
@@ -34,6 +36,7 @@ static inline ffstr ffui_edit_text(ffui_edit *e) {
 
 FF_EXTERN int ffui_edit_addtext(ffui_edit *c, const char *text, size_t len);
 #define ffui_text_addtextstr(t, s)  ffui_edit_addtext(t, (s)->ptr, (s)->len)
+#define ffui_send_text_addtextstr(t, s)  ffui_edit_addtext(t, (s)->ptr, (s)->len)
 
 #define ffui_edit_sel(e, off, n)  ffui_send((e)->h, EM_SETSEL, off, (off) + (n))
 #define ffui_edit_selall(e)  ffui_send((e)->h, EM_SETSEL, 0, -1)

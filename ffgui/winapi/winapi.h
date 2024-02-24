@@ -230,8 +230,6 @@ typedef struct ffui_ctl {
 	HFONT font;
 } ffui_ctl;
 
-FF_EXTERN int _ffui_ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent, uint style, uint exstyle);
-
 #define ffui_getctl(h)  ((void*)GetWindowLongPtrW(h, GWLP_USERDATA))
 #define ffui_setctl(h, udata)  SetWindowLongPtrW(h, GWLP_USERDATA, (LONG_PTR)(udata))
 

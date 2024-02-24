@@ -665,6 +665,9 @@ static gboolean _ffui_send_handler(gpointer data)
 	case FFUI_EDIT_GETTEXT:
 		*(ffstr*)c->udata = ffui_edit_text((ffui_edit*)c->ctl);  break;
 
+	case FFUI_EDIT_SETTEXT:
+		ffui_edit_settextstr((ffui_edit*)c->ctl, (ffstr*)c->udata);  break;
+
 	case FFUI_STBAR_SETTEXT:
 		ffui_status_settextz((ffui_ctl*)c->ctl, c->udata);  break;
 

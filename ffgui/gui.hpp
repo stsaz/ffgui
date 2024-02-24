@@ -9,9 +9,9 @@ struct ffui_labelxx : ffui_label {
 };
 
 struct ffui_editxx : ffui_edit {
-	ffstr	text() { return ffui_edit_text(this); }
-	void	text(const char *sz) { ffui_edit_settextz(this, sz); }
-	void	text(ffstr s) { ffui_edit_settextstr(this, &s); }
+	ffstr	text() { ffstr s; ffui_send_edit_textstr(this, &s); return s; }
+	void	text(const char *sz) { ffstr s = FFSTR_INITZ(sz); ffui_send_edit_settextstr(this, &s); }
+	void	text(ffstr s) { ffui_send_edit_settextstr(this, &s); }
 
 	void	sel_all() { ffui_edit_selall(this); }
 
@@ -19,7 +19,7 @@ struct ffui_editxx : ffui_edit {
 };
 
 struct ffui_textxx : ffui_text {
-	void	add(ffstr s) { ffui_text_addtextstr(this, &s); }
+	void	add(ffstr s) { ffui_send_text_addtextstr(this, &s); }
 };
 
 struct ffui_buttonxx : ffui_button {
