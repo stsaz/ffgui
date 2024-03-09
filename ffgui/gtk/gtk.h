@@ -154,12 +154,26 @@ FF_EXTERN ffsize ffui_send(void *ctl, uint id, void *udata);
 	!!val; \
 })
 
+#ifdef FF_64
+#define FFINT_JOIN(hi, lo) \
+	((ffsize)(hi & 0xffffffff) << 32) | (lo & 0xffffffff)
+#define FFINT_SPLIT(val, hi, lo) \
+	*(hi) = ((val) >> 32) & 0xffffffff, \
+	*(lo) = (val) & 0xffffffff
+#else
+#define FFINT_JOIN(hi, lo) \
+	((ffsize)(hi & 0xffff) << 16) | (lo & 0xffff)
+#define FFINT_SPLIT(val, hi, lo) \
+	*(hi) = ((val) >> 16) & 0xffff, \
+	*(lo) = (val) & 0xffff
+#endif
+
 static inline void ffui_send_view_setdata(ffui_view *v, uint first, int delta) {
-	ffsize p = ((first & 0xffff) << 16) | (delta & 0xffff);
+	ffsize p = FFINT_JOIN(first, delta);
 	ffui_send(v, FFUI_VIEW_SETDATA, (void*)p);
 }
 static inline void ffui_post_view_setdata(ffui_view *v, uint first, int delta) {
-	ffsize p = ((first & 0xffff) << 16) | (delta & 0xffff);
+	ffsize p = FFINT_JOIN(first, delta);
 	ffui_post(v, FFUI_VIEW_SETDATA, (void*)p);
 }
 

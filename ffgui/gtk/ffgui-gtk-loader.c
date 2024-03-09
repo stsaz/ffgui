@@ -31,18 +31,37 @@ static void* ldr_getctl(ffui_loader *g, const ffstr *name)
 	return g->getctl(g->udata, &s);
 }
 
-static void ctl_place(ffui_ctl *ctl, ffui_loader *g)
+static void ctl_reset(ffui_loader *g)
 {
-	if (g->f_horiz) {
+	g->f_horiz = 0;
+}
+
+enum CTL_PLACE {
+	CTL_PLACE_EXPAND = 1,
+	CTL_PLACE_FILL = 2,
+	CTL_PLACE_EXPAND_H = 4,
+};
+
+static void ctl_place_f(ffui_loader *g, ffui_ctl *ctl, uint flags)
+{
+	if (g->f_horiz || g->f_horiz_prev) {
 		if (g->hbox == NULL) {
 			g->hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-			gtk_box_pack_start(GTK_BOX(g->wnd->vbox), g->hbox, /*expand=*/0, /*fill=*/0, /*padding=*/0);
+			gtk_box_pack_start(GTK_BOX(g->wnd->vbox), g->hbox, !!(flags & CTL_PLACE_EXPAND_H), /*fill=*/0, /*padding=*/0);
 		}
-		gtk_box_pack_start(GTK_BOX(g->hbox), ctl->h, /*expand=*/0, /*fill=*/0, /*padding=*/0);
+		gtk_box_pack_start(GTK_BOX(g->hbox), ctl->h, !!(flags & CTL_PLACE_EXPAND), !!(flags & CTL_PLACE_FILL), /*padding=*/0);
+		g->f_horiz_prev = g->f_horiz;
 	} else {
-		g->hbox = NULL;
 		gtk_box_pack_start(GTK_BOX(g->wnd->vbox), ctl->h, /*expand=*/0, /*fill=*/0, /*padding=*/0);
 	}
+
+	if (!g->f_horiz)
+		g->hbox = NULL;
+}
+
+static void ctl_place(ffui_ctl *ctl, ffui_loader *g)
+{
+	ctl_place_f(g, ctl, 0);
 }
 
 // ICON
@@ -222,7 +241,7 @@ static int lbl_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	ffconf_scheme_addctx(cs, lbl_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -250,7 +269,7 @@ static int img_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	ffconf_scheme_addctx(cs, img_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -302,7 +321,7 @@ static int btn_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	ffconf_scheme_addctx(cs, btn_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -335,7 +354,7 @@ static int checkbox_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	ffconf_scheme_addctx(cs, checkbox_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -351,7 +370,7 @@ static int combobox_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_EINVAL;
 	ffui_combo_create(g->combo, g->wnd);
 	ffconf_scheme_addctx(cs, combobox_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -359,17 +378,7 @@ static int combobox_new(ffconf_scheme *cs, ffui_loader *g)
 // EDITBOX
 static int edit_done(ffconf_scheme *cs, ffui_loader *g)
 {
-	if (g->f_horiz) {
-		if (g->hbox == NULL) {
-			g->hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-			gtk_box_pack_start(GTK_BOX(g->wnd->vbox), g->hbox, /*expand=*/0, /*fill=*/0, /*padding=*/0);
-		}
-		gtk_box_pack_start(GTK_BOX(g->hbox), g->edit->h, /*expand=*/1, /*fill=*/1, /*padding=*/0);
-	} else {
-		g->hbox = NULL;
-		gtk_box_pack_start(GTK_BOX(g->wnd->vbox), g->edit->h, /*expand=*/0, /*fill=*/0, /*padding=*/0);
-	}
-
+	ctl_place_f(g, g->ctl, CTL_PLACE_EXPAND | CTL_PLACE_FILL);
 	return 0;
 }
 static int edit_text(ffconf_scheme *cs, ffui_loader *g, ffstr val)
@@ -399,7 +408,7 @@ static int edit_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	ffconf_scheme_addctx(cs, edit_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -408,11 +417,7 @@ static int edit_new(ffconf_scheme *cs, ffui_loader *g)
 static int text_done(ffconf_scheme *cs, ffui_loader *g)
 {
 	if (g->f_horiz) {
-		if (g->hbox == NULL) {
-			g->hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-			gtk_box_pack_start(GTK_BOX(g->wnd->vbox), g->hbox, /*expand=*/1, /*fill=*/0, /*padding=*/0);
-		}
-		gtk_box_pack_start(GTK_BOX(g->hbox), g->text->h, /*expand=*/1, /*fill=*/1, /*padding=*/0);
+		ctl_place_f(g, g->ctl, CTL_PLACE_EXPAND | CTL_PLACE_FILL | CTL_PLACE_EXPAND_H);
 	} else {
 		void *scrl = gtk_scrolled_window_new(NULL, NULL);
 		gtk_container_add(GTK_CONTAINER(scrl), g->text->h);
@@ -437,7 +442,7 @@ static int text_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	ffconf_scheme_addctx(cs, text_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -471,16 +476,7 @@ static int trkbar_done(ffconf_scheme *cs, ffui_loader *g)
 {
 	if (g->f_loadconf)
 		return 0;
-	if (g->f_horiz) {
-		if (g->hbox == NULL) {
-			g->hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-			gtk_box_pack_start(GTK_BOX(g->wnd->vbox), g->hbox, /*expand=*/0, /*fill=*/0, /*padding=*/0);
-		}
-		gtk_box_pack_start(GTK_BOX(g->hbox), g->trkbar->h, /*expand=*/1, /*fill=*/1, /*padding=*/0);
-	} else {
-		g->hbox = NULL;
-		gtk_box_pack_start(GTK_BOX(g->wnd->vbox), g->trkbar->h, /*expand=*/0, /*fill=*/0, /*padding=*/0);
-	}
+	ctl_place_f(g, g->ctl, CTL_PLACE_EXPAND | CTL_PLACE_FILL);
 	return 0;
 }
 static const ffconf_arg trkbar_args[] = {
@@ -499,7 +495,7 @@ static int trkbar_new(ffconf_scheme *cs, ffui_loader *g)
 	if (0 != ffui_track_create(g->trkbar, g->wnd))
 		return FFUI_ENOMEM;
 	ffconf_scheme_addctx(cs, trkbar_args, g);
-	g->flags = 0;
+	ctl_reset(g);
 	return 0;
 }
 
@@ -523,6 +519,7 @@ static int tab_new(ffconf_scheme *cs, ffui_loader *g)
 	if (0 != ffui_tab_create(g->tab, g->wnd))
 		return FFUI_ENOMEM;
 	ffconf_scheme_addctx(cs, tab_args, g);
+	ctl_reset(g);
 	return 0;
 }
 
@@ -624,6 +621,7 @@ static int view_new(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	ffconf_scheme_addctx(cs, view_args, g);
+	ctl_reset(g);
 	return 0;
 }
 

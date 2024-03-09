@@ -11,6 +11,13 @@ struct ffui_view_disp {
 	ffstr text;
 };
 
+#define ffui_view_dispinfo_index(d)  (d)->idx
+#define ffui_view_dispinfo_subindex(d)  (d)->sub
+
+static inline void ffui_view_dispinfo_settext(struct ffui_view_disp *d, const char *text, ffsize len) {
+	d->text.len = ffmem_ncopy(d->text.ptr, d->text.len, text, len);
+}
+
 struct ffui_view {
 	GtkWidget *h;
 	enum FFUI_UID uid;
@@ -30,7 +37,9 @@ struct ffui_view {
 		const char *new_text;
 	} edited;
 	ffstr drop_data;
-	struct ffui_view_disp disp;
+	struct {
+		struct ffui_view_disp disp, *dispinfo_item;
+	};
 	};
 };
 
@@ -150,7 +159,12 @@ static inline void ffui_view_style(ffui_view *v, uint flags, uint set) {
 }
 
 #define ffui_view_nitems(v)  gtk_tree_model_iter_n_children((void*)(v)->store, NULL)
-#define ffui_view_setcount(v, n, redraw)
+static inline void ffui_view_setcount(ffui_view *v, uint n, uint redraw) {
+	if (redraw) {
+		ffui_post_view_clear(v);
+		ffui_post_view_setdata(v, 0, n);
+	}
+}
 
 /**
 first: first index to add or redraw

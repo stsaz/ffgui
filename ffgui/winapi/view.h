@@ -478,6 +478,9 @@ FF_EXTERN void ffui_view_edit_set(ffui_view *v, uint i, uint sub);
 
 typedef LVITEMW ffui_view_disp;
 
+#define ffui_view_dispinfo_index(d)  (d)->iItem
+#define ffui_view_dispinfo_subindex(d)  (d)->iSubItem
+
 /** Set text on a 'dispinfo_item' object. */
 static inline void ffui_view_dispinfo_settext(LVITEMW *it, const char *text, ffsize len) {
 	if (!(it->mask & LVIF_TEXT) || it->cchTextMax == 0)

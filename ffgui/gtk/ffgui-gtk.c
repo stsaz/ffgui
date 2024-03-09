@@ -300,6 +300,8 @@ void ffui_view_setdata(ffui_view *v, uint first, int delta)
 	if (first > rows)
 		return;
 
+	v->dispinfo_item = &v->disp;
+
 	char buf[1024];
 	ffui_viewitem it = {};
 	for (uint i = first;  (int)i < n;  i++) {
@@ -709,9 +711,9 @@ static gboolean _ffui_send_handler(gpointer data)
 		*(ffsize*)c->udata = ffui_view_scroll_vert((ffui_view*)c->ctl);  break;
 
 	case FFUI_VIEW_SETDATA: {
-		uint first = (ffsize)c->udata >> 16;
-		uint delta = (ffssize)c->udata & 0xffff;
-		ffui_view_setdata((ffui_view*)c->ctl, first, (short)delta);
+		uint first, delta;
+		FFINT_SPLIT((ffsize)c->udata, &first, &delta);
+		ffui_view_setdata((ffui_view*)c->ctl, first, delta);
 		break;
 	}
 

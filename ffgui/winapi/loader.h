@@ -97,6 +97,7 @@ struct ffui_loader {
 	uint resize_flags;
 	uint vis :1;
 	uint style_horizontal :1;
+	uint style_horiz_prev :1;
 	uint auto_pos :1;
 	uint man_pos :1;
 	uint style_reset :1;

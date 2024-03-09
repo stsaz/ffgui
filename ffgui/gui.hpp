@@ -33,6 +33,8 @@ struct ffui_buttonxx : ffui_button {
 struct ffui_checkboxxx : ffui_checkbox {
 	void	check(bool val) { ffui_checkbox_check(this, val); }
 	bool	checked() { return ffui_send_checkbox_checked(this); }
+
+	void	text(const char *sz) { ffui_send_checkbox_settextz(this, sz); }
 };
 
 struct ffui_comboboxxx : ffui_combobox {

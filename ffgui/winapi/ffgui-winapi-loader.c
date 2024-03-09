@@ -45,6 +45,17 @@ static void state_reset2(ffui_loader *g)
 	state_reset(g);
 }
 
+static void ctl_create_prepare(ffui_loader *g)
+{
+	// Default font
+	if (g->wnd->font == NULL) {
+		ffui_font font = {};
+		ffstr font_name = FFSTR_Z("Arial");
+		ffui_font_set(&font, &font_name, 10, 0);
+		g->wnd->font = ffui_font_create(&font);
+	}
+}
+
 static void ctl_setpos(ffui_loader *g)
 {
 	ffui_pos *p = &g->prev_ctl_pos;
@@ -52,8 +63,8 @@ static void ctl_setpos(ffui_loader *g)
 		g->auto_pos = 0;
 		g->man_pos = 1;
 
-		if (g->style_horizontal) {
-			g->style_horizontal = 0;
+		if (g->style_horiz_prev) {
+			// place this control to the right of the previous control
 			g->r.x = p->x + p->cx + FF_XSPACE;
 			g->r.y = p->y;
 
@@ -63,6 +74,7 @@ static void ctl_setpos(ffui_loader *g)
 			p->cy = ffmax(p->cy, g->r.cy);
 
 		} else {
+			// place this control below the previous control line
 			g->r.x = 0;
 			g->r.y = p->y + p->cy + FF_YSPACE;
 
@@ -71,6 +83,9 @@ static void ctl_setpos(ffui_loader *g)
 			p->y = g->r.y;
 			p->cy = g->r.cy;
 		}
+
+		g->style_horiz_prev = g->style_horizontal;
+		g->style_horizontal = 0;
 
 	} else {
 		p->x = g->r.x;
@@ -712,6 +727,8 @@ static int new_label(ffconf_scheme *cs, ffui_loader *g)
 	if (NULL == (g->actl.ctl = ldr_getctl(g, &cs->objval)))
 		return FFUI_EINVAL;
 
+	ctl_create_prepare(g);
+
 	if (0 != ffui_label_create(g->actl.lbl, g->wnd))
 		return FFUI_ENOMEM;
 
@@ -801,6 +818,8 @@ static int new_button(ffconf_scheme *cs, ffui_loader *g)
 	if (NULL == (g->actl.ctl = ldr_getctl(g, &cs->objval)))
 		return FFUI_EINVAL;
 
+	ctl_create_prepare(g);
+
 	if (0 != ffui_button_create(g->actl.ctl, g->wnd))
 		return FFUI_ENOMEM;
 
@@ -834,6 +853,8 @@ static int new_checkbox(ffconf_scheme *cs, ffui_loader *g)
 {
 	if (NULL == (g->actl.ctl = ldr_getctl(g, &cs->objval)))
 		return FFUI_EINVAL;
+
+	ctl_create_prepare(g);
 
 	if (0 != ffui_checkbox_create(g->actl.ctl, g->wnd))
 		return FFUI_ENOMEM;
@@ -878,6 +899,8 @@ static int new_editbox(ffconf_scheme *cs, ffui_loader *g)
 {
 	if (NULL == (g->actl.ctl = ldr_getctl(g, &cs->objval)))
 		return FFUI_EINVAL;
+
+	ctl_create_prepare(g);
 
 	int r;
 	if (ffsz_eq(cs->arg->name, "text"))
@@ -1222,6 +1245,10 @@ static int new_listview(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	state_reset(g);
+	g->r.cx = 200;
+	g->r.cy = 200;
+	g->auto_pos = 1;
+	g->resize_flags |= F_RESIZE_CX | F_RESIZE_CY;
 	ffconf_scheme_addctx(cs, view_args, g);
 	return 0;
 }
@@ -1245,6 +1272,8 @@ static int new_treeview(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	state_reset(g);
+	g->r.cx = 200;
+	g->r.cy = 200;
 	ffconf_scheme_addctx(cs, tview_args, g);
 	return 0;
 }

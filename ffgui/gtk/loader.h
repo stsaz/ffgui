@@ -74,6 +74,7 @@ typedef struct ffui_loader {
 	uint flags;
 	struct {
 		uint f_horiz :1;
+		uint f_horiz_prev :1;
 		uint f_loadconf :1; // ffui_ldr_loadconf()
 	};
 	};
