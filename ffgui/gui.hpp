@@ -96,6 +96,7 @@ struct ffui_viewxx : ffui_view {
 	ffslice	selected() { return ffui_view_selected(this); }
 	int		selected_first() { return ffui_view_selected_first(this); }
 	void	select(uint pos) { ffui_post_view_select_single(this, pos); }
+	void	select_all() { ffui_post_view_select_single(this, ~0U); }
 
 	ffui_viewcolxx& column(int pos, ffui_viewcolxx *vc) { ffui_view_col(this, pos, &vc->vc); return *vc; }
 	void	column(uint pos, ffui_viewcolxx &vc) { ffui_view_setcol(this, pos, &vc.vc); }

@@ -418,7 +418,8 @@ FF_EXTERN int ffui_view_search(ffui_view *v, ffsize by);
 #define ffui_view_select(v, i)  ListView_SetItemState((v)->h, i, LVIS_SELECTED, LVIS_SELECTED)
 #define ffui_view_unsel(v, i)  ListView_SetItemState((v)->h, i, 0, LVIS_SELECTED)
 
-static inline ffslice ffui_view_selected(ffui_view *c) {ffvec sel = {};
+static inline ffslice ffui_view_selected(ffui_view *c) {
+	ffvec sel = {};
 	int i = -1;
 	while (-1 != (i = ffui_view_selnext(c, i))) {
 		*ffvec_pushT(&sel, uint) = i;

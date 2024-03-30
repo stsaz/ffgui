@@ -99,7 +99,7 @@ static void ctl_setpos(ffui_loader *g)
 		ffui_setposrect(g->actl.ctl, &g->r, 0);
 	}
 }
-static int ctl_pos(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int ctl_pos(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	if (g->list_idx == 4)
 		return FFUI_EINVAL;
@@ -110,7 +110,7 @@ static int ctl_pos(ffconf_scheme *cs, ffui_loader *g, int64 val)
 	g->list_idx++;
 	return 0;
 }
-static int ctl_size(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int ctl_size(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	if (g->list_idx == 2)
 		return FFUI_EINVAL;
@@ -165,7 +165,7 @@ static int ctl_done(ffconf_scheme *cs, ffui_loader *g)
 	return 0;
 }
 
-static int ico_size(ffconf_scheme *cs,	_ffui_ldr_icon_t *ico, int64 val)
+static int ico_size(ffconf_scheme *cs,	_ffui_ldr_icon_t *ico, ffint64 val)
 {
 	switch (ico->ldr->list_idx) {
 	case 0:
@@ -379,17 +379,17 @@ static int trkbar_style(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 		g->style_horizontal = 1;
 	return 0;
 }
-static int trkbar_range(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int trkbar_range(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	ffui_track_setrange(g->actl.trkbar, val);
 	return 0;
 }
-static int trkbar_val(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int trkbar_val(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	ffui_track_set(g->actl.trkbar, val);
 	return 0;
 }
-static int trkbar_pagesize(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int trkbar_pagesize(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	ffui_track_setpage(g->actl.trkbar, val);
 	return 0;
@@ -453,7 +453,7 @@ static int stbar_style(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 {
 	return 0;
 }
-static int stbar_parts(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int stbar_parts(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	int *it = ffvec_pushT(&g->sb_parts, int);
 	if (it == NULL)
@@ -554,7 +554,7 @@ static int font_name(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 	return 0;
 }
 
-static int font_height(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int font_height(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	ffui_font_set(&g->fnt, NULL, (int)val, 0);
 	return 0;
@@ -1169,7 +1169,7 @@ static int view_double_click(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 }
 
 
-static int viewcol_width(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int viewcol_width(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	ffui_viewcol_setwidth(&g->vicol, val);
 	return 0;
@@ -1190,7 +1190,7 @@ static int viewcol_align(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 	return 0;
 }
 
-static int viewcol_order(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int viewcol_order(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	ffui_viewcol_setorder(&g->vicol, val);
 	return 0;
@@ -1374,7 +1374,7 @@ static int wnd_title(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 	return 0;
 }
 
-static int wnd_position(ffconf_scheme *cs, ffui_loader *g, int64 v)
+static int wnd_position(ffconf_scheme *cs, ffui_loader *g, ffint64 v)
 {
 	int *i = &g->r.x;
 	if (g->list_idx == 4)
@@ -1388,7 +1388,7 @@ static int wnd_position(ffconf_scheme *cs, ffui_loader *g, int64 v)
 	return 0;
 }
 
-static int wnd_placement(ffconf_scheme *cs, ffui_loader *g, int64 v)
+static int wnd_placement(ffconf_scheme *cs, ffui_loader *g, ffint64 v)
 {
 	int li = g->list_idx++;
 
@@ -1419,7 +1419,7 @@ static int wnd_icon(ffconf_scheme *cs, ffui_loader *g)
 }
 
 /** 'percent': Opacity value, 10-100 */
-static int wnd_opacity(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int wnd_opacity(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	uint percent = (uint)val;
 
@@ -1430,7 +1430,7 @@ static int wnd_opacity(ffconf_scheme *cs, ffui_loader *g, int64 val)
 	return 0;
 }
 
-static int wnd_borderstick(ffconf_scheme *cs, ffui_loader *g, int64 val)
+static int wnd_borderstick(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 {
 	g->wnd->bordstick = (byte)val;
 	return 0;

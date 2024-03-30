@@ -181,6 +181,10 @@ static inline void ffui_view_clear(ffui_view *v) {
 
 static inline void ffui_view_select_single(ffui_view *v, uint pos) {
 	GtkTreeSelection *sel = gtk_tree_view_get_selection(GTK_TREE_VIEW((v)->h));
+	if (pos == ~0U) {
+		gtk_tree_selection_select_all(sel);
+		return;
+	}
 	gtk_tree_selection_unselect_all(sel);
 
 	GtkTreeIter iter;
