@@ -14,8 +14,12 @@ typedef struct ffui_edit {
 } ffui_edit;
 typedef ffui_edit ffui_text;
 
-FF_EXTERN int ffui_edit_create(ffui_ctl *c, ffui_window *parent);
-FF_EXTERN int ffui_text_create(ffui_ctl *c, ffui_window *parent);
+static inline int ffui_edit_create(ffui_ctl *c, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(c, FFUI_UID_EDITBOX, parent);
+}
+static inline int ffui_text_create(ffui_ctl *c, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(c, FFUI_UID_TEXT, parent);
+}
 
 static inline ffstr ffui_edit_text(ffui_edit *e) {
 	ffstr s = {};

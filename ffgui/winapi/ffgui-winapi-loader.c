@@ -338,7 +338,8 @@ static int new_menuitem(ffconf_scheme *cs, ffui_loader *g)
 }
 
 static const ffconf_arg menu_args[] = {
-	{ "item",	T_OBJMULTI,	_F(new_menuitem) },
+	{ "check_item",	T_OBJMULTI,	_F(new_menuitem) },
+	{ "item",		T_OBJMULTI,	_F(new_menuitem) },
 	{}
 };
 static int new_menu(ffconf_scheme *cs, ffui_loader *g)

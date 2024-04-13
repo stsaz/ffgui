@@ -13,8 +13,12 @@ typedef struct ffui_combobox {
 	uint edit_update_id;
 } ffui_combobox;
 
-FF_EXTERN int ffui_combo_create(ffui_ctl *c, ffui_window *parent);
-FF_EXTERN int ffui_combo_createlist(ffui_ctl *c, ffui_window *parent);
+static inline int ffui_combo_create(ffui_ctl *c, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(c, FFUI_UID_COMBOBOX, parent);
+}
+static inline int ffui_combo_createlist(ffui_ctl *c, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(c, FFUI_UID_COMBOBOX_LIST, parent);
+}
 
 /** Insert an item
 idx: -1: insert to end */
@@ -50,7 +54,31 @@ static inline void ffui_combo_insert(ffui_combobox *c, int idx, const char *txt,
 #define ffui_combo_active(c)  ((uint)ffui_ctl_send(c, CB_GETCURSEL, 0, 0))
 
 /** Get text */
-FF_EXTERN ffstr ffui_combo_text(ffui_combobox *c, uint idx);
+static inline ffstr ffui_combo_text(ffui_combobox *c, uint idx) {
+	int e = 1;
+	ffstr s = {};
+	ffsize len = ffui_send(c->h, CB_GETLBTEXTLEN, idx, 0);
+	wchar_t ws[255], *w = ws;
+
+	if (len >= FF_COUNT(ws)
+		&& NULL == (w = ffws_alloc(len + 1)))
+		goto end;
+	ffui_send(c->h, CB_GETLBTEXT, idx, w);
+
+	s.len = ff_wtou(NULL, 0, w, len, 0);
+	if (NULL == (s.ptr = (char*)ffmem_alloc(s.len + 1)))
+		goto end;
+
+	ff_wtou(s.ptr, s.len + 1, w, len + 1, 0);
+	e = 0;
+
+end:
+	if (w != ws)
+		ffmem_free(w);
+	if (e)
+		s.len = 0;
+	return s;
+}
 #define ffui_combo_text_active(c)  ffui_combo_text(c, ffui_combo_active(c))
 
 /** Show/hide drop down list */

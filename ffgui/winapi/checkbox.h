@@ -7,7 +7,9 @@ typedef struct ffui_checkbox {
 	uint action_id;
 } ffui_checkbox;
 
-FF_EXTERN int ffui_checkbox_create(ffui_ctl *c, ffui_window *parent);
+static inline int ffui_checkbox_create(ffui_ctl *c, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(c, FFUI_UID_CHECKBOX, parent);
+}
 
 #define ffui_checkbox_check(c, val)  ffui_ctl_send(c, BM_SETCHECK, val, 0)
 #define ffui_checkbox_checked(c)  ffui_ctl_send(c, BM_GETCHECK, 0, 0)

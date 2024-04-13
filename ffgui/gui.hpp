@@ -1,6 +1,10 @@
 /** C++ cross-platform GUI interface
 2023, Simon Zolin */
 
+struct ffui_menuxx : ffui_menu {
+	void	check(uint id, bool check) { ffui_menu_check(this, id, check); }
+};
+
 struct ffui_labelxx : ffui_label {
 	void	text(const char *sz) { ffui_send_label_settext(this, sz); }
 #ifdef FF_LINUX

@@ -11,7 +11,9 @@ typedef struct ffui_label {
 	WNDPROC oldwndproc;
 } ffui_label;
 
-FF_EXTERN int ffui_label_create(ffui_label *c, ffui_window *parent);
+static inline int ffui_label_create(ffui_label *c, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(c, FFUI_UID_LABEL, parent);
+}
 
 #define ffui_send_label_settext(c, sz)  ffui_settextz(c, sz)
 

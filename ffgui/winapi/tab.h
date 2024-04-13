@@ -14,7 +14,9 @@ typedef struct ffui_tab {
 	int chsel_id;
 } ffui_tab;
 
-FF_EXTERN int ffui_tab_create(ffui_tab *t, ffui_window *parent);
+static inline int ffui_tab_create(ffui_tab *t, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(t, FFUI_UID_TAB, parent);
+}
 
 #define ffui_tab_active(t)  ffui_ctl_send(t, TCM_GETCURSEL, 0, 0)
 #define ffui_tab_changed_index(t)  ffui_ctl_send(t, TCM_GETCURSEL, 0, 0)

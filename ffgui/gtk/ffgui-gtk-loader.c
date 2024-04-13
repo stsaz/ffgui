@@ -124,6 +124,7 @@ static int mi_action(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 		return FFUI_EINVAL;
 
 	ffui_menu_setcmd(g->mi, id);
+	ffui_menu_store_id(g->menu, g->mi, id);
 	return 0;
 }
 
@@ -160,12 +161,15 @@ static int mi_new(ffconf_scheme *cs, ffui_loader *g)
 {
 	const ffstr *name = ffconf_scheme_objval(cs);
 
-	if (ffstr_eqcz(name, "-"))
-		g->mi = ffui_menu_newsep();
-	else {
+	if (ffstr_eqcz(name, "-")) {
+		g->mi = ffui_menu_separator_new();
+	} else {
 		ffstr s = vars_val(&g->vars, *name);
 		char *sz = ffsz_dupstr(&s);
-		g->mi = ffui_menu_new(sz);
+		if (ffsz_eq(cs->arg->name, "check_item"))
+			g->mi = ffui_menu_check_new(sz);
+		else
+			g->mi = ffui_menu_new(sz);
 		ffmem_free(sz);
 	}
 
@@ -176,7 +180,8 @@ static int mi_new(ffconf_scheme *cs, ffui_loader *g)
 
 // MENU
 static const ffconf_arg menu_args[] = {
-	{ "item",	T_OBJMULTI,	_F(mi_new) },
+	{ "check_item",	T_OBJMULTI,	_F(mi_new) },
+	{ "item",		T_OBJMULTI,	_F(mi_new) },
 	{}
 };
 

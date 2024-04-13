@@ -339,6 +339,18 @@ static int ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent)
 	return ctl_create_f(c, uid, parent, 0, 0);
 }
 
+int _ffui_ctl_create_inherit_font(void *_c, enum FFUI_UID type, ffui_window *parent)
+{
+	ffui_ctl *c = _c;
+	if (0 != ctl_create_f(c, type, parent->h, 0, 0))
+		return 1;
+
+	if (parent->font != NULL)
+		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
+
+	return 0;
+}
+
 int ffui_ctl_destroy(void *_c)
 {
 	ffui_ctl *c = _c;
@@ -481,17 +493,6 @@ int ffui_status_create(ffui_statusbar *c, ffui_window *parent)
 }
 
 
-int ffui_label_create(ffui_label *c, ffui_window *parent)
-{
-	if (0 != ctl_create((void*)c, FFUI_UID_LABEL, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
-
 
 int ffui_img_create(ffui_image *im, ffui_window *parent)
 {
@@ -501,17 +502,6 @@ int ffui_img_create(ffui_image *im, ffui_window *parent)
 	return 0;
 }
 
-
-int ffui_edit_create(ffui_ctl *c, ffui_window *parent)
-{
-	if (0 != ctl_create(c, FFUI_UID_EDITBOX, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
 
 int ffui_edit_addtext(ffui_edit *c, const char *text, size_t len)
 {
@@ -530,104 +520,6 @@ int ffui_edit_addtext(ffui_edit *c, const char *text, size_t len)
 	return 0;
 }
 
-int ffui_text_create(ffui_ctl *c, ffui_window *parent)
-{
-	if (0 != ctl_create(c, FFUI_UID_TEXT, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
-
-
-int ffui_combo_create(ffui_ctl *c, ffui_window *parent)
-{
-	if (0 != ctl_create(c, FFUI_UID_COMBOBOX, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
-
-int ffui_combo_createlist(ffui_ctl *c, ffui_window *parent)
-{
-	if (0 != ctl_create(c, FFUI_UID_COMBOBOX_LIST, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
-
-ffstr ffui_combo_text(ffui_combobox *c, uint idx)
-{
-	int e = 1;
-	ffstr s = {};
-	ffsize len = ffui_send(c->h, CB_GETLBTEXTLEN, idx, 0);
-	wchar_t ws[255], *w = ws;
-
-	if (len >= FF_COUNT(ws)
-		&& NULL == (w = ffws_alloc(len + 1)))
-		goto end;
-	ffui_send(c->h, CB_GETLBTEXT, idx, w);
-
-	s.len = ff_wtou(NULL, 0, w, len, 0);
-	if (NULL == (s.ptr = ffmem_alloc(s.len + 1)))
-		goto end;
-
-	ff_wtou(s.ptr, s.len + 1, w, len + 1, 0);
-	e = 0;
-
-end:
-	if (w != ws)
-		ffmem_free(w);
-	if (e)
-		s.len = 0;
-	return s;
-}
-
-
-int ffui_button_create(ffui_ctl *c, ffui_window *parent)
-{
-	if (0 != ctl_create(c, FFUI_UID_BUTTON, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
-
-
-int ffui_checkbox_create(ffui_ctl *c, ffui_window *parent)
-{
-	if (0 != ctl_create(c, FFUI_UID_CHECKBOX, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
-
-
-int ffui_radio_create(ffui_ctl *c, ffui_window *parent)
-{
-	if (0 != ctl_create(c, FFUI_UID_RADIO, parent->h))
-		return 1;
-
-	if (parent->font != NULL)
-		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
-
-	return 0;
-}
-
-
 int ffui_track_create(ffui_trackbar *t, ffui_window *parent)
 {
 	if (0 != ctl_create((ffui_ctl*)t, FFUI_UID_TRACKBAR, parent->h))
@@ -635,21 +527,10 @@ int ffui_track_create(ffui_trackbar *t, ffui_window *parent)
 	return 0;
 }
 
-
 int ffui_progress_create(ffui_ctl *c, ffui_window *parent)
 {
 	if (0 != ctl_create(c, FFUI_UID_PROGRESSBAR, parent->h))
 		return 1;
-	return 0;
-}
-
-
-int ffui_tab_create(ffui_tab *t, ffui_window *parent)
-{
-	if (0 != ctl_create((ffui_ctl*)t, FFUI_UID_TAB, parent->h))
-		return 1;
-	if (parent->font != NULL)
-		ffui_ctl_send((ffui_ctl*)t, WM_SETFONT, parent->font, 0);
 	return 0;
 }
 

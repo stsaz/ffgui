@@ -49,10 +49,6 @@ do { \
 	ffsz_utow((t)->nid.szInfo, FF_COUNT((t)->nid.szInfo), text); \
 } while (0)
 
-static inline int ffui_tray_set(ffui_trayicon *t, uint show) {
-	return 0 == Shell_NotifyIconW(NIM_MODIFY, &t->nid);
-}
-
 static inline int ffui_tray_show(ffui_trayicon *t, uint show) {
 	uint action = (show) ? NIM_ADD : NIM_DELETE;
 	if (show && t->visible)

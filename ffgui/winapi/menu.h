@@ -130,6 +130,14 @@ static inline int ffui_menu_get(ffui_menu *m, int pos, ffui_menuitem *mi) {
 	return !GetMenuItemInfoW(m->h, pos, 1, mi);
 }
 
+static inline void ffui_menu_check(ffui_menu *m, uint id, int check) {
+	MENUITEMINFOW mi = {};
+	mi.cbSize = sizeof(mi);
+	mi.fMask = MIIM_STATE;
+	mi.fState = (check) ? MFS_CHECKED : 0;
+	SetMenuItemInfoW(m->h, id, 0, &mi);
+}
+
 static inline int ffui_menu_destroy(ffui_menu *m) {
 	int r = 0;
 	if (m->h != 0) {

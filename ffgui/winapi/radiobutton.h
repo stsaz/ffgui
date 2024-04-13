@@ -7,7 +7,9 @@ struct ffui_radio {
 	uint action_id;
 };
 
-FF_EXTERN int ffui_radio_create(ffui_ctl *c, ffui_window *parent);
+static inline int ffui_radio_create(ffui_ctl *c, ffui_window *parent) {
+	return _ffui_ctl_create_inherit_font(c, FFUI_UID_RADIO, parent);
+}
 
 #define ffui_radio_check(c)  ffui_checkbox_check(c)
 #define ffui_radio_checked(c)  ffui_checkbox_checked(c)

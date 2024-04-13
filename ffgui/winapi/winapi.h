@@ -238,6 +238,8 @@ typedef struct ffui_ctl {
 #define ffui_ctl_send(c, msg, w, l)  ffui_send((c)->h, msg, w, l)
 #define ffui_ctl_post(c, msg, w, l)  ffui_post((c)->h, msg, w, l)
 
+FF_EXTERN int _ffui_ctl_create_inherit_font(void *c, enum FFUI_UID type, ffui_window *parent);
+
 enum FFUI_FPOS {
 	FFUI_FPOS_DPISCALE = 1,
 	FFUI_FPOS_CLIENT = 2,
