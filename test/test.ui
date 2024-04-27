@@ -1,0 +1,4 @@
+window main {
+	title		ffgui-test
+	position	0 0 600 400
+}

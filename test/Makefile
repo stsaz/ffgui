@@ -7,8 +7,9 @@ FFBASE := $(ROOT)/ffbase
 
 include $(FFBASE)/conf.mk
 
-CFLAGS += -MMD -MP
-CFLAGS += -I$(FFGUI) -I$(FFSYS) -I$(FFBASE)
+CFLAGS += -g \
+	-MMD -MP \
+	-I$(FFGUI) -I$(FFSYS) -I$(FFBASE)
 
 OBJ := test.o
 
@@ -29,7 +30,7 @@ else
 endif
 CXXFLAGS := $(CFLAGS)
 
-default: ffgui
+default: ffgui-test
 
 -include $(wildcard *.d)
 
@@ -40,5 +41,5 @@ default: ffgui
 %.o: $(FFGUI)/ffgui/winapi/%.c
 	$(C) $(CFLAGS) $< -o $@
 
-ffgui: $(OBJ)
+ffgui-test: $(OBJ)
 	$(LINK) $+ $(LINKFLAGS) -o $@
