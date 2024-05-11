@@ -441,14 +441,15 @@ char* ffui_dlg_save(ffui_dialog *d, ffui_window *parent, const char *fn, ffsize 
 
 
 // WINDOW
-static void _ffui_wnd_onclose(void *a, void *b, gpointer udata)
+static gboolean _ffui_wnd_onclose(void *a, void *b, gpointer udata)
 {
 	ffui_window *wnd = udata;
 	wnd->on_action(wnd, wnd->onclose_id);
 	if (wnd->hide_on_close) {
 		ffui_show(wnd, 0);
-		return;
+		return 1;
 	}
+	return 0;
 }
 
 int ffui_wnd_create(ffui_window *w)
