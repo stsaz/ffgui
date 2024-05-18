@@ -120,11 +120,13 @@ enum FFUI_MSG {
 	FFUI_VIEW_SEL_SINGLE,
 	FFUI_WND_SETTEXT,
 	FFUI_WND_SHOW,
+	FFUI_WND_PLACE,
 };
 
 /**
 id: enum FFUI_MSG */
-FF_EXTERN void ffui_post(void *ctl, uint id, void *udata);
+FF_EXTERN void ffui_post_copy(void *ctl, uint id, void *udata, uint udata_size);
+#define ffui_post(ctl, id, udata)  ffui_post_copy(ctl, id, udata, 0)
 FF_EXTERN ffsize ffui_send(void *ctl, uint id, void *udata);
 
 #define ffui_post_quitloop()  ffui_post(NULL, FFUI_QUITLOOP, NULL)
@@ -136,7 +138,8 @@ FF_EXTERN ffsize ffui_send(void *ctl, uint id, void *udata);
 #define ffui_send_button_seticon(b, ico)  ffui_send(b, FFUI_BUTTON_SETICON, (void*)ico)
 #define ffui_send_checkbox_settextz(ctl, sz)  ffui_send(ctl, FFUI_CHECKBOX_SETTEXTZ, (void*)sz)
 #define ffui_send_wnd_settext(ctl, sz)  ffui_send(ctl, FFUI_WND_SETTEXT, (void*)sz)
-#define ffui_post_wnd_show(ctl, show)  ffui_send(ctl, FFUI_WND_SHOW, (void*)(ffsize)show)
+#define ffui_post_wnd_show(ctl, show)  ffui_post(ctl, FFUI_WND_SHOW, (void*)(ffsize)show)
+#define ffui_post_wnd_place(ctl, showcmd, pos)  ffui_post_copy(ctl, FFUI_WND_PLACE, pos, sizeof(*pos))
 #define ffui_post_view_clear(ctl)  ffui_post(ctl, FFUI_VIEW_CLEAR, NULL)
 
 #define ffui_send_view_scroll(c) ({ \

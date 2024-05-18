@@ -647,6 +647,7 @@ struct cmd_send {
 	void *udata;
 	uint id;
 	uint ref;
+	char data[0];
 };
 
 static gboolean _ffui_send_handler(gpointer data)
@@ -700,6 +701,9 @@ static gboolean _ffui_send_handler(gpointer data)
 
 	case FFUI_WND_SHOW:
 		ffui_show((ffui_window*)c->ctl, (ffsize)c->udata);  break;
+
+	case FFUI_WND_PLACE:
+		ffui_wnd_setplacement((ffui_window*)c->ctl, 0, (ffui_pos*)c->udata);  break;
 
 
 	case FFUI_VIEW_CLEAR:
@@ -793,13 +797,18 @@ ffsize ffui_send(void *ctl, uint id, void *udata)
 	return 0;
 }
 
-void ffui_post(void *ctl, uint id, void *udata)
+void ffui_post_copy(void *ctl, uint id, void *udata, uint udata_size)
 {
 	_ffui_log("ctl:%p  udata:%p  id:%xu", ctl, udata, id);
-	struct cmd_send *c = ffmem_new(struct cmd_send);
+	struct cmd_send *c = ffmem_alloc(sizeof(struct cmd_send) + udata_size);
 	c->ctl = ctl;
 	c->id = id;
+	c->ref = 0;
 	c->udata = udata;
+	if (udata_size) {
+		ffmem_copy(c->data, udata, udata_size);
+		c->udata = c->data;
+	}
 	ffcpu_fence_release();
 
 	if (id == FFUI_QUITLOOP) {

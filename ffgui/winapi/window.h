@@ -107,6 +107,7 @@ static inline void ffui_wnd_setplacement(ffui_window *w, uint showcmd, const ffu
 	ffui_pos_torect(pos, &pl.rcNormalPosition);
 	SetWindowPlacement(w->h, &pl);
 }
+#define ffui_post_wnd_place(w, showcmd, pos)  ffui_wnd_setplacement(w, showcmd, pos)
 
 FF_EXTERN int ffui_wnd_tooltip(ffui_window *w, ffui_ctl *ctl, const char *text, ffsize len);
 
