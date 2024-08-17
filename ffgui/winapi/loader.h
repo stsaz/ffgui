@@ -49,7 +49,6 @@ struct ffui_loader {
 	ffui_ldr_getctl_t getctl;
 	ffui_ldr_getcmd_t getcmd;
 	void *udata;
-	uint list_idx;
 
 	char language[2];
 	ffvec lang_data_def, lang_data;
@@ -59,6 +58,7 @@ struct ffui_loader {
 	HMODULE hmod_resource;
 
 	uint dark_mode :1;
+	uint dark_title_set :1;
 
 	ffvec paned_array; // ffui_paned*[].  User must free the controls and vector manually.
 	ffvec accels; //ffui_wnd_hotkey[]
@@ -67,9 +67,7 @@ struct ffui_loader {
 	ffui_pos screen;
 	// everything below is memzero'ed for each new window
 	ffui_window *wnd;
-	ffui_pos prev_ctl_pos;
-	ffui_pos r;
-	int ir;
+	ffui_pos prev_ctl_pos, r, wnd_pos;
 	_ffui_ldr_icon_t ico_ctl;
 	union {
 		struct {
@@ -92,16 +90,18 @@ struct ffui_loader {
 		union ffui_anyctl actl;
 	};
 	char *errstr;
-	char *wndname;
-	uint showcmd;
+	char *wnd_name;
+	uint wnd_show_code;
 	uint resize_flags;
-	uint vis :1;
+	uint list_idx;
+	uint paned_idx;
+	ushort edge_right, edge_bottom;
+	uint wnd_visible :1;
 	uint style_horizontal :1;
 	uint style_horiz_prev :1;
 	uint auto_pos :1;
 	uint man_pos :1;
 	uint style_reset :1;
-	uint dark_title_set :1;
 };
 
 /** Initialize GUI loader.
@@ -114,6 +114,8 @@ FF_EXTERN void ffui_ldr_init(ffui_loader *g, ffui_ldr_getctl_t getctl, ffui_ldr_
 FF_EXTERN void ffui_ldr_fin(ffui_loader *g);
 
 #define ffui_ldr_errstr(g)  ((g)->errstr)
+
+FF_EXTERN int ffui_ldr_load(ffui_loader *g, ffstr data);
 
 /** Load GUI from file. */
 FF_EXTERN int ffui_ldr_loadfile(ffui_loader *g, const char *fn);

@@ -316,9 +316,11 @@ static HWND hwnd_create(enum FFUI_UID uid, const wchar_t *text, HWND parent, con
 	if (uid == FFUI_UID_WINDOW)
 		inst = GetModuleHandleW(NULL);
 
-	return CreateWindowExW(exstyle, ctls[uid].sid, text, style
+	HWND h = CreateWindowExW(exstyle, ctls[uid].sid, text, style
 		, _ffui_dpi_scale(r->x), _ffui_dpi_scale(r->y), _ffui_dpi_scale(r->cx), _ffui_dpi_scale(r->cy)
 		, parent, NULL, inst, param);
+	_ffui_log("%s: %s %p", __func__, ctls[uid].stype, h);
+	return h;
 }
 
 static int ctl_create_f(ffui_ctl *c, enum FFUI_UID uid, HWND parent, uint style, uint exstyle)
@@ -1377,8 +1379,8 @@ static int _ffui_wnd_ctlcolor(ffui_window *wnd, void *ctl, HDC hdc, ffsize *code
 
 /*
 exit
-  via Close button: WM_SYSCOMMAND(SC_CLOSE) -> WM_CLOSE -> WM_DESTROY
-  when user signs out: WM_QUERYENDSESSION -> WM_CLOSE
+	* via Close button: WM_SYSCOMMAND(SC_CLOSE) -> WM_CLOSE -> WM_DESTROY
+	* when user signs out: WM_ENDSESSION
 */
 
 int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, size_t l)
@@ -1538,18 +1540,17 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 
 	case FFUI_WM_USER_TRAY:
 		print("FFUI_WM_USER_TRAY", h, w, l);
-
 		if (wnd->trayicon != NULL && w == wnd->trayicon->nid.uID)
 			tray_nfy(wnd, wnd->trayicon, l);
 		break;
 
-	case WM_CLOSE:
-		print("WM_CLOSE", h, w, l);
-		break;
-
-	case WM_QUERYENDSESSION:
-		print("WM_QUERYENDSESSION", h, w, l);
-		wnd->on_action(wnd, wnd->onclose_id);
+	case WM_ENDSESSION:
+		print("WM_ENDSESSION", h, w, l);
+		if (wnd->top) {
+			wnd->close_forced = 1;
+			wnd->on_action(wnd, wnd->onclose_id);
+			return 1;
+		}
 		break;
 
 	case WM_DESTROY: {

@@ -28,6 +28,7 @@
 // MESSAGE LOOP
 
 typedef unsigned int uint;
+typedef unsigned short ushort;
 typedef struct ffui_window ffui_window;
 
 FF_EXTERN int ffui_init(void);

@@ -14,7 +14,8 @@ struct ffui_window {
 	uint top :1 //quit message loop if the window is closed
 		, hide_on_close :1 //window doesn't get destroyed when it's closed
 		, manual_close :1 //don't automatically close window on X button press
-		, popup :1;
+		, popup :1
+		, close_forced :1;
 	byte bordstick; //stick window to screen borders
 
 	HWND ttip;

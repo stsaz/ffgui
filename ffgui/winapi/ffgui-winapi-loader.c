@@ -97,6 +97,8 @@ static void ctl_setpos(ffui_loader *g)
 	if (g->man_pos) {
 		g->man_pos = 0;
 		ffui_setposrect(g->actl.ctl, &g->r, 0);
+		g->edge_right = ffmax(g->edge_right, (uint)g->r.x + g->r.cx);
+		g->edge_bottom = ffmax(g->edge_bottom, (uint)g->r.y + g->r.cy);
 	}
 }
 static int ctl_pos(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
@@ -165,7 +167,7 @@ static int ctl_done(ffconf_scheme *cs, ffui_loader *g)
 	return 0;
 }
 
-static int ico_size(ffconf_scheme *cs,	_ffui_ldr_icon_t *ico, ffint64 val)
+static int ico_size(ffconf_scheme *cs, _ffui_ldr_icon_t *ico, ffint64 val)
 {
 	switch (ico->ldr->list_idx) {
 	case 0:
@@ -178,7 +180,7 @@ static int ico_size(ffconf_scheme *cs,	_ffui_ldr_icon_t *ico, ffint64 val)
 	ico->ldr->list_idx++;
 	return 0;
 }
-static int ico_done(ffconf_scheme *cs,	_ffui_ldr_icon_t *ico)
+static int ico_done(ffconf_scheme *cs, _ffui_ldr_icon_t *ico)
 {
 	char *p, fn[4096];
 
@@ -758,6 +760,7 @@ static int image_done(ffconf_scheme *cs, ffui_loader *g)
 {
 	if (g->ico_ctl.icon.h != NULL)
 		ffui_img_set(g->actl.img, &g->ico_ctl.icon);
+	ctl_setpos(g);
 	ffui_show(g->actl.ctl, 1);
 	return 0;
 }
@@ -765,6 +768,7 @@ static const ffconf_arg image_args[] = {
 	{ "icon",		T_OBJ,		_F(image_icon) },
 	{ "onclick",	T_STR,		_F(image_action) },
 	{ "position",	T_INTLIST_S,_F(ctl_pos) },
+	{ "size",		T_INTLIST,	_F(ctl_size) },
 	{ "style",		T_STRLIST,	_F(ctl_style) },
 	{ NULL,			T_CLOSE,	_F(image_done) },
 };
@@ -776,7 +780,7 @@ static int new_image(ffconf_scheme *cs, ffui_loader *g)
 	if (0 != ffui_img_create(g->actl.img, g->wnd))
 		return FFUI_ENOMEM;
 
-	state_reset(g);
+	state_reset2(g);
 	ffconf_scheme_addctx(cs, image_args, g);
 	return 0;
 }
@@ -861,6 +865,7 @@ static int new_checkbox(ffconf_scheme *cs, ffui_loader *g)
 		return FFUI_ENOMEM;
 
 	state_reset2(g);
+	g->r.cx = 400;
 	ffconf_scheme_addctx(cs, chbox_args, g);
 	return 0;
 }
@@ -1283,9 +1288,9 @@ static int new_treeview(ffconf_scheme *cs, ffui_loader *g)
 static int pnchild_resize(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 {
 	if (ffstr_eqcz(&val, "cx"))
-		g->paned->items[g->ir - 1].cx = 1;
+		g->paned->items[g->paned_idx - 1].cx = 1;
 	else if (ffstr_eqcz(&val, "cy"))
-		g->paned->items[g->ir - 1].cy = 1;
+		g->paned->items[g->paned_idx - 1].cy = 1;
 	else
 		return FFUI_EINVAL;
 	return 0;
@@ -1294,9 +1299,9 @@ static int pnchild_resize(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 static int pnchild_move(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 {
 	if (ffstr_eqcz(&val, "x"))
-		g->paned->items[g->ir - 1].x = 1;
+		g->paned->items[g->paned_idx - 1].x = 1;
 	else if (ffstr_eqcz(&val, "y"))
-		g->paned->items[g->ir - 1].y = 1;
+		g->paned->items[g->paned_idx - 1].y = 1;
 	else
 		return FFUI_EINVAL;
 	return 0;
@@ -1309,13 +1314,13 @@ static const ffconf_arg paned_child_args[] = {
 
 static int paned_child(ffconf_scheme *cs, ffui_loader *g)
 {
-	if (g->ir == FF_COUNT(g->paned->items))
+	if (g->paned_idx == FF_COUNT(g->paned->items))
 		return FFUI_EINVAL;
 
 	void *ctl = ldr_getctl(g, &cs->objval);
 	if (ctl == NULL) return FFUI_EINVAL;
 
-	g->paned->items[g->ir++].it = ctl;
+	g->paned->items[g->paned_idx++].it = ctl;
 	state_reset(g);
 	ffconf_scheme_addctx(cs, paned_child_args, g);
 	return 0;
@@ -1333,7 +1338,7 @@ static int new_paned(ffconf_scheme *cs, ffui_loader *g)
 	ffmem_zero_obj(g->paned);
 	ffui_paned_create(g->paned, g->wnd);
 
-	g->ir = 0;
+	g->paned_idx = 0;
 	state_reset(g);
 	ffconf_scheme_addctx(cs, paned_args, g);
 	return 0;
@@ -1384,6 +1389,7 @@ static int wnd_position(ffconf_scheme *cs, ffui_loader *g, ffint64 v)
 	if (g->list_idx == 3) {
 		ffui_pos_limit(&g->r, &g->screen);
 		ffui_setposrect(g->wnd, &g->r, 0);
+		g->wnd_pos = g->r;
 	}
 	g->list_idx++;
 	return 0;
@@ -1394,7 +1400,7 @@ static int wnd_placement(ffconf_scheme *cs, ffui_loader *g, ffint64 v)
 	int li = g->list_idx++;
 
 	if (li == 0) {
-		g->showcmd = v;
+		g->wnd_show_code = v;
 		return 0;
 	} else if (li == 5)
 		return FFUI_EINVAL;
@@ -1404,7 +1410,7 @@ static int wnd_placement(ffconf_scheme *cs, ffui_loader *g, ffint64 v)
 
 	if (li == 4) {
 		ffui_pos_limit(&g->r, &g->screen);
-		ffui_wnd_setplacement(g->wnd, g->showcmd, &g->r);
+		ffui_wnd_setplacement(g->wnd, g->wnd_show_code, &g->r);
 	}
 	return 0;
 }
@@ -1440,8 +1446,7 @@ static int wnd_borderstick(ffconf_scheme *cs, ffui_loader *g, ffint64 val)
 static int wnd_style(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 {
 	if (ffstr_eqcz(&val, "visible"))
-		g->vis = 1;
-
+		g->wnd_visible = 1;
 	else
 		return FFUI_EINVAL;
 	return 0;
@@ -1513,13 +1518,21 @@ static int wnd_done(ffconf_scheme *cs, ffui_loader *g)
 			return FFUI_ESYS;
 	}
 
-	if (g->vis) {
-		g->vis = 0;
+	if ((uint)g->wnd_pos.cx < g->edge_right
+		|| (uint)g->wnd_pos.cy - 40 < g->edge_bottom) {
+		// Increase the window's width+height so that all controls are fully visible
+		g->wnd_pos.cx = g->edge_right + 2;
+		g->wnd_pos.cy = 40 + g->edge_bottom + 2;
+		ffui_setposrect(g->wnd, &g->wnd_pos, 0);
+	}
+
+	if (g->wnd_visible) {
+		g->wnd_visible = 0;
 		ffui_show(g->wnd, 1);
 	}
 
 	g->wnd = NULL;
-	ffmem_free(g->wndname);  g->wndname = NULL;
+	ffmem_free(g->wnd_name);  g->wnd_name = NULL;
 	return 0;
 }
 static const ffconf_arg wnd_args[] = {
@@ -1580,9 +1593,12 @@ static int new_wnd(ffconf_scheme *cs, ffui_loader *g)
 
 	if (NULL == (wnd = g->getctl(g->udata, &cs->objval)))
 		return FFUI_EINVAL;
-	ffmem_zero((byte*)g + FF_OFF(ffui_loader, wnd), sizeof(ffui_loader) - FF_OFF(ffui_loader, wnd));
+
+	uint off = FF_OFF(ffui_loader, wnd);
+	ffmem_zero((byte*)g + off, sizeof(ffui_loader) - off);
+
 	g->wnd = wnd;
-	if (NULL == (g->wndname = ffsz_dupn(cs->objval.ptr, cs->objval.len)))
+	if (NULL == (g->wnd_name = ffsz_dupn(cs->objval.ptr, cs->objval.len)))
 		return FFUI_ENOMEM;
 	g->actl.ctl = (ffui_ctl*)wnd;
 	if (0 != ffui_wnd_create(wnd))
@@ -1593,7 +1609,6 @@ static int new_wnd(ffconf_scheme *cs, ffui_loader *g)
 		_ffui_wnd_dark_title_set(g->wnd);
 	}
 
-	state_reset(g);
 	ffconf_scheme_addctx(cs, wnd_args, g);
 	return 0;
 }
@@ -1670,7 +1685,7 @@ void ffui_ldr_fin(ffui_loader *g)
 	// g->paned_array
 	ffvec_free(&g->accels);
 	ffmem_free(g->errstr);  g->errstr = NULL;
-	ffmem_free(g->wndname);  g->wndname = NULL;
+	ffmem_free(g->wnd_name);  g->wnd_name = NULL;
 }
 
 static void* ldr_getctl(ffui_loader *g, const ffstr *name)
@@ -1678,8 +1693,21 @@ static void* ldr_getctl(ffui_loader *g, const ffstr *name)
 	char buf[255];
 	ffstr s;
 	s.ptr = buf;
-	s.len = ffs_format_r0(buf, sizeof(buf), "%s.%S", g->wndname, name);
+	s.len = ffs_format_r0(buf, sizeof(buf), "%s.%S", g->wnd_name, name);
 	return g->getctl(g->udata, &s);
+}
+
+int ffui_ldr_load(ffui_loader *g, ffstr data)
+{
+	ffstr errstr = {};
+	int r = ffconf_parse_object(top_args, g, &data, 0, &errstr);
+	if (r != 0) {
+		ffmem_free(g->errstr);
+		g->errstr = ffsz_dupstr(&errstr);
+	}
+
+	ffstr_free(&errstr);
+	return r;
 }
 
 int ffui_ldr_loadfile(ffui_loader *g, const char *fn)

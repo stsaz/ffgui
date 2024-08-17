@@ -122,3 +122,10 @@ struct ffui_windowxx : ffui_window {
 	ffui_pos pos() { ffui_pos p; ffui_wnd_placement(this, &p); return p; }
 	void	place(const ffui_pos &pos) { ffui_wnd_setplacement(this, SW_SHOWNORMAL, &pos); }
 };
+
+struct ffui_dialogxx : ffui_dialog {
+	ffui_dialogxx() { ffui_dlg_init(this); }
+	~ffui_dialogxx() { ffui_dlg_destroy(this); }
+	void	title(const char *sz) { ffui_dlg_titlez(this, sz); }
+	char*	save(ffui_window *parent, const char *default_name) { return ffui_dlg_save(this, parent, default_name, (default_name) ? ffsz_len(default_name) : 0); }
+};
