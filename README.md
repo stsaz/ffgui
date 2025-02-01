@@ -18,4 +18,4 @@ Other features:
 * Win32 API: UTF-8
 * Very thin C++ layer that's completely inlined by the compiler
 
-Based on [ffsys] (https://github.com/stsaz/ffsys) & [ffbase](https://github.com/stsaz/ffbase).
+Based on [ffsys](https://github.com/stsaz/ffsys) & [ffbase](https://github.com/stsaz/ffbase).

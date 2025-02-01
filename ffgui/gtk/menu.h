@@ -23,6 +23,11 @@ static inline int ffui_menu_create(ffui_menu *m) {
 	return (m->h == NULL);
 }
 
+static inline void ffui_menu_destroy(ffui_menu *m) {
+	if (!m) return;
+	ffvec_free(&m->items);
+}
+
 #define ffui_menu_new(text)  gtk_menu_item_new_with_mnemonic(text)
 #define ffui_menu_check_new(text)  gtk_check_menu_item_new_with_mnemonic(text)
 #define ffui_menu_separator_new()  gtk_separator_menu_item_new()

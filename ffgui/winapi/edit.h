@@ -42,7 +42,7 @@ FF_EXTERN int ffui_edit_addtext(ffui_edit *c, const char *text, size_t len);
 #define ffui_text_addtextstr(t, s)  ffui_edit_addtext(t, (s)->ptr, (s)->len)
 #define ffui_send_text_addtextstr(t, s)  ffui_edit_addtext(t, (s)->ptr, (s)->len)
 
-#define ffui_edit_sel(e, off, n)  ffui_send((e)->h, EM_SETSEL, off, (off) + (n))
+#define ffui_edit_sel(e, start, end)  ffui_send((e)->h, EM_SETSEL, start, end)
 #define ffui_edit_selall(e)  ffui_send((e)->h, EM_SETSEL, 0, -1)
 
 /** Get the number of lines */

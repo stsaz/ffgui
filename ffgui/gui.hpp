@@ -2,6 +2,7 @@
 2023, Simon Zolin */
 
 struct ffui_menuxx : ffui_menu {
+	~ffui_menuxx() { ffui_menu_destroy(this); }
 	void	check(uint id, bool check) { ffui_menu_check(this, id, check); }
 };
 
@@ -17,6 +18,7 @@ struct ffui_editxx : ffui_edit {
 	void	text(const char *sz) { ffstr s = FFSTR_INITZ(sz); ffui_send_edit_settextstr(this, &s); }
 	void	text(ffstr s) { ffui_send_edit_settextstr(this, &s); }
 
+	void	select(uint start, uint end) { ffui_edit_sel(this, start, end); }
 	void	sel_all() { ffui_edit_selall(this); }
 
 	void	focus() { ffui_ctl_focus(this); }
