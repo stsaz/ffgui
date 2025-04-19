@@ -923,8 +923,15 @@ static int new_editbox(ffconf_scheme *cs, ffui_loader *g)
 }
 
 
+static int cbx_on_change(ffconf_scheme *cs, ffui_loader *g, ffstr val)
+{
+	if (!(g->actl.combx->change_id = g->getcmd(g->udata, &val)))
+		return FFUI_EINVAL;
+	return 0;
+}
 static const ffconf_arg combx_args[] = {
 	{ "font",		T_OBJ,		_F(label_font) },
+	{ "on_change",	T_STR,		_F(cbx_on_change) },
 	{ "position",	T_INTLIST_S,_F(ctl_pos) },
 	{ "resize",		T_STRLIST,	_F(ctl_resize) },
 	{ "size",		T_INTLIST,	_F(ctl_size) },

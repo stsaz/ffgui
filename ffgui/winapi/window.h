@@ -61,7 +61,7 @@ FF_EXTERN int ffui_wnd_create(ffui_window *w);
 #define ffui_send_wnd_settext(c, sz)  ffui_settext(c, sz, ffsz_len(sz))
 
 #define ffui_wnd_front(w)  (w)->h = GetForegroundWindow()
-#define ffui_wnd_setfront(w)  SetForegroundWindow((w)->h)
+#define ffui_wnd_present(w)  SetForegroundWindow((w)->h)
 
 static inline void ffui_wnd_icon(ffui_window *w, ffui_icon *big_ico, ffui_icon *small_ico) {
 	big_ico->h = (HICON)ffui_ctl_send(w, WM_GETICON, ICON_BIG, 0);

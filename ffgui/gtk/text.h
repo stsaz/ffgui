@@ -20,6 +20,18 @@ static inline void ffui_text_addtext(ffui_text *t, const char *text, ffsize len)
 #define ffui_text_addtextz(t, text)  ffui_text_addtext(t, text, ffsz_len(text))
 #define ffui_text_addtextstr(t, str)  ffui_text_addtext(t, (str)->ptr, (str)->len)
 
+static inline ffstr ffui_text_text(ffui_text *t) {
+	GtkTextBuffer *gbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(t->h));
+	GtkTextIter end;
+	gtk_text_buffer_get_end_iter(gbuf, &end);
+	gchar *sz = gtk_text_buffer_get_text(gbuf, NULL, &end, 1);
+	ffstr s;
+	s.len = ffsz_len(sz);
+	s.ptr = ffsz_dupn(sz, s.len);
+	g_free(sz);
+	return s;
+}
+
 static inline void ffui_text_clear(ffui_text *t) {
 	GtkTextBuffer *gbuf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(t->h));
 	GtkTextIter start, end;

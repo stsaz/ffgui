@@ -25,6 +25,8 @@ struct ffui_editxx : ffui_edit {
 };
 
 struct ffui_textxx : ffui_text {
+	ffstr	text() { ffstr s;  ffui_send_text_text(this, &s);  return s; }
+	void	clear() { ffui_text_clear(this); }
 	void	add(ffstr s) { ffui_send_text_addtextstr(this, &s); }
 };
 
@@ -82,6 +84,13 @@ struct ffui_viewcolxx {
 	void	width(uint val) { ffui_viewcol_setwidth(&vc, val); }
 };
 
+struct ffui_viewxx_disp : ffui_view_disp {
+	uint	index() const { return ffui_view_dispinfo_index(this); }
+	uint	subindex() const { return ffui_view_dispinfo_subindex(this); }
+
+	void	text(ffstr s) { ffui_view_dispinfo_settext(this, s.ptr, s.len); }
+};
+
 struct ffui_viewxx : ffui_view {
 	int		append(ffstr text) {
 		ffui_viewitem vi = {};
@@ -118,6 +127,7 @@ struct ffui_viewxx : ffui_view {
 
 struct ffui_windowxx : ffui_window {
 	void	show(bool show) { ffui_post_wnd_show(this, show); }
+	void	present() { ffui_wnd_present(this); }
 	void	title(const char *sz) { ffui_send_wnd_settext(this, sz); }
 	void	close() { ffui_wnd_close(this); }
 

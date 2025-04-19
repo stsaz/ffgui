@@ -365,9 +365,16 @@ static int checkbox_new(ffconf_scheme *cs, ffui_loader *g)
 
 
 // COMBOBOX
+static int combobox_on_change(ffconf_scheme *cs, ffui_loader *g, ffstr val)
+{
+	if (!(g->combo->change_id = g->getcmd(g->udata, &val)))
+		return FFUI_EINVAL;
+	return 0;
+}
 static const ffconf_arg combobox_args[] = {
-	{ "style",	T_STRLIST,	_F(btn_style) },
-	{ NULL,		T_CLOSE,	_F(btn_done) },
+	{ "on_change",	T_STR,		_F(combobox_on_change) },
+	{ "style",		T_STRLIST,	_F(btn_style) },
+	{ NULL,			T_CLOSE,	_F(btn_done) },
 };
 static int combobox_new(ffconf_scheme *cs, ffui_loader *g)
 {

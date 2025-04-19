@@ -17,6 +17,10 @@ static inline int ffui_edit_create(ffui_edit *e, ffui_window *parent) {
 
 #define ffui_edit_settextz(e, text)  gtk_entry_set_text(GTK_ENTRY((e)->h), text)
 static inline void ffui_edit_settext(ffui_edit *e, const char *text, ffsize len) {
+	if (len == 0) {
+		ffui_edit_settextz(e, "");
+		return;
+	}
 	char *sz = (text[len] != '\0') ? ffsz_dupn(text, len) : (char*)text;
 	ffui_edit_settextz(e, sz);
 	if (sz != text)

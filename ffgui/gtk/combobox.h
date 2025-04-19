@@ -4,11 +4,14 @@
 typedef struct ffui_combobox ffui_combobox;
 struct ffui_combobox {
 	_FFUI_CTL_MEMBERS
+	uint change_id;
 };
 
+FF_EXTERN void _ffui_combo_changed(GtkComboBox *self, gpointer udata);
 static inline void ffui_combo_create(ffui_combobox *cb, ffui_window *parent) {
 	cb->h = gtk_combo_box_text_new();
 	cb->wnd = parent;
+	g_signal_connect(cb->h, "changed", (GCallback)_ffui_combo_changed, cb);
 }
 
 #define ffui_combo_set(c, i)  gtk_combo_box_set_active((GtkComboBox*)(c)->h, i)

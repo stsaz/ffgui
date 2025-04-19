@@ -1071,7 +1071,7 @@ static void tray_nfy(ffui_window *wnd, ffui_trayicon *t, size_t l)
 	case WM_RBUTTONUP:
 		if (t->pmenu != NULL) {
 			ffui_point pt;
-			ffui_wnd_setfront(wnd);
+			ffui_wnd_present(wnd);
 			ffui_cur_pos(&pt);
 			ffui_menu_show(t->pmenu, pt.x, pt.y, wnd->h);
 		}
@@ -1150,6 +1150,7 @@ static void wnd_cmd(ffui_window *wnd, uint w, HWND h)
 		break;
 
 	case FFUI_UID_COMBOBOX:
+	case FFUI_UID_COMBOBOX_LIST:
 		switch (msg) {
 		case CBN_SELCHANGE:
 			id = ctl.combx->change_id;
@@ -1286,7 +1287,7 @@ static int _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsiz
 	case NM_RCLICK:
 		if (v->pmenu != NULL) {
 			ffui_point pt;
-			ffui_wnd_setfront(wnd);
+			ffui_wnd_present(wnd);
 			ffui_cur_pos(&pt);
 			ffui_menu_show(v->pmenu, pt.x, pt.y, wnd->h);
 		}

@@ -100,6 +100,7 @@ enum FFUI_MSG {
 	FFUI_CLIP_SETTEXT,
 	FFUI_EDIT_GETTEXT,
 	FFUI_EDIT_SETTEXT,
+	FFUI_TEXT_GETTEXT,
 	FFUI_TEXT_ADDTEXT,
 	FFUI_TEXT_SETTEXT,
 	FFUI_LBL_SETTEXT,
@@ -133,6 +134,7 @@ FF_EXTERN ffsize ffui_send(void *ctl, uint id, void *udata);
 #define ffui_send_label_settext(ctl, sz)  ffui_send(ctl, FFUI_LBL_SETTEXT, (void*)sz)
 #define ffui_send_edit_textstr(ctl, str_dst)  ffui_send(ctl, FFUI_EDIT_GETTEXT, str_dst)
 #define ffui_send_edit_settextstr(ctl, str)  ffui_send(ctl, FFUI_EDIT_SETTEXT, str)
+#define ffui_send_text_text(ctl, str_dst)  ffui_send(ctl, FFUI_TEXT_GETTEXT, str_dst)
 #define ffui_send_text_settextstr(ctl, str)  ffui_send(ctl, FFUI_TEXT_SETTEXT, (void*)str)
 #define ffui_send_text_addtextstr(ctl, str)  ffui_send(ctl, FFUI_TEXT_ADDTEXT, (void*)str)
 #define ffui_send_button_seticon(b, ico)  ffui_send(b, FFUI_BUTTON_SETICON, (void*)ico)

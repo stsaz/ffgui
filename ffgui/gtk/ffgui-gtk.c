@@ -59,6 +59,13 @@ void _ffui_checkbox_clicked(GtkWidget *widget, gpointer udata)
 	cb->wnd->on_action(cb->wnd, cb->action_id);
 }
 
+void _ffui_combo_changed(GtkComboBox *self, gpointer udata)
+{
+	ffui_combobox *cb = udata;
+	if (cb->change_id)
+		cb->wnd->on_action(cb->wnd, cb->change_id);
+}
+
 void _ffui_edit_changed(GtkEditable *editable, gpointer udata)
 {
 	ffui_edit *e = udata;
@@ -675,6 +682,9 @@ static gboolean _ffui_send_handler(gpointer data)
 	case FFUI_STBAR_SETTEXT:
 		ffui_status_settextz((ffui_ctl*)c->ctl, c->udata);  break;
 
+
+	case FFUI_TEXT_GETTEXT:
+		*(ffstr*)c->udata = ffui_text_text((ffui_text*)c->ctl);  break;
 
 	case FFUI_TEXT_SETTEXT:
 		ffui_text_clear((ffui_text*)c->ctl);
