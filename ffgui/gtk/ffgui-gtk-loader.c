@@ -398,6 +398,14 @@ static int edit_text(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 	ffui_edit_settextstr(g->edit, &val);
 	return 0;
 }
+static int edit_style(ffconf_scheme *cs, ffui_loader *g, ffstr val)
+{
+	if (ffstr_eqcz(&val, "password"))
+		ffui_edit_password(g->edit, 1);
+	else
+		return btn_style(cs, g, val);
+	return 0;
+}
 static int edit_onchange(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 {
 	if (0 == (g->edit->change_id = g->getcmd(g->udata, &val)))
@@ -406,7 +414,7 @@ static int edit_onchange(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 }
 static const ffconf_arg edit_args[] = {
 	{ "onchange",T_STR,		_F(edit_onchange) },
-	{ "style",	T_STRLIST,	_F(btn_style) },
+	{ "style",	T_STRLIST,	_F(edit_style) },
 	{ "text",	T_STR,		_F(edit_text) },
 	{ NULL,		T_CLOSE,	_F(edit_done) },
 };
