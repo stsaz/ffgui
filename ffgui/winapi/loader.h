@@ -102,6 +102,7 @@ struct ffui_loader {
 	uint auto_pos :1;
 	uint man_pos :1;
 	uint style_reset :1;
+	uint f_cbx_editable :1;
 };
 
 /** Initialize GUI loader.

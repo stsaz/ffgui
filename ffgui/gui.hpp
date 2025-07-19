@@ -49,6 +49,7 @@ struct ffui_comboboxxx : ffui_combobox {
 	void	add(const char *text) { ffui_combo_add(this, text); }
 	void	clear() { ffui_combo_clear(this); }
 	ffstr	text() { return ffui_combo_text_active(this); }
+	void	text(const char *text) { ffui_combo_text_set(this, text); }
 
 	void	set(int index) { ffui_combo_set(this, index); }
 	int		get() { return ffui_combo_active(this); }

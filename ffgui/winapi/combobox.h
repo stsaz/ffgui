@@ -81,5 +81,7 @@ end:
 }
 #define ffui_combo_text_active(c)  ffui_combo_text(c, ffui_combo_active(c))
 
+#define ffui_combo_text_set(c, sz)  ffui_settextz(c, sz)
+
 /** Show/hide drop down list */
 #define ffui_combo_popup(c, show)  ffui_ctl_send(c, CB_SHOWDROPDOWN, show, 0)

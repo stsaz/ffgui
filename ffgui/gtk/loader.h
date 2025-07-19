@@ -76,6 +76,7 @@ typedef struct ffui_loader {
 		uint f_horiz :1;
 		uint f_horiz_prev :1;
 		uint f_loadconf :1; // ffui_ldr_loadconf()
+		uint f_cbx_editable :1;
 	};
 	};
 } ffui_loader;

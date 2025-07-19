@@ -34,6 +34,7 @@ static void* ldr_getctl(ffui_loader *g, const ffstr *name)
 static void ctl_reset(ffui_loader *g)
 {
 	g->f_horiz = 0;
+	g->f_cbx_editable = 0;
 }
 
 enum CTL_PLACE {
@@ -365,22 +366,38 @@ static int checkbox_new(ffconf_scheme *cs, ffui_loader *g)
 
 
 // COMBOBOX
+static int combobox_style(ffconf_scheme *cs, ffui_loader *g, ffstr val)
+{
+	if (ffstr_eqcz(&val, "editable"))
+		g->f_cbx_editable = 1;
+	else
+		return btn_style(cs, g, val);
+	return 0;
+}
 static int combobox_on_change(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 {
 	if (!(g->combo->change_id = g->getcmd(g->udata, &val)))
 		return FFUI_EINVAL;
 	return 0;
 }
+static int combobox_done(ffconf_scheme *cs, ffui_loader *g)
+{
+	if (g->f_cbx_editable)
+		ffui_combo_create_editable(g->combo, g->wnd);
+	else
+		ffui_combo_create(g->combo, g->wnd);
+	ctl_place(g->ctl, g);
+	return 0;
+}
 static const ffconf_arg combobox_args[] = {
 	{ "on_change",	T_STR,		_F(combobox_on_change) },
-	{ "style",		T_STRLIST,	_F(btn_style) },
-	{ NULL,			T_CLOSE,	_F(btn_done) },
+	{ "style",		T_STRLIST,	_F(combobox_style) },
+	{ NULL,			T_CLOSE,	_F(combobox_done) },
 };
 static int combobox_new(ffconf_scheme *cs, ffui_loader *g)
 {
 	if (NULL == (g->ctl = ldr_getctl(g, ffconf_scheme_objval(cs))))
 		return FFUI_EINVAL;
-	ffui_combo_create(g->combo, g->wnd);
 	ffconf_scheme_addctx(cs, combobox_args, g);
 	ctl_reset(g);
 	return 0;

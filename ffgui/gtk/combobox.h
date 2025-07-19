@@ -13,6 +13,11 @@ static inline void ffui_combo_create(ffui_combobox *cb, ffui_window *parent) {
 	cb->wnd = parent;
 	g_signal_connect(cb->h, "changed", (GCallback)_ffui_combo_changed, cb);
 }
+static inline void ffui_combo_create_editable(ffui_combobox *cb, ffui_window *parent) {
+	cb->h = gtk_combo_box_text_new_with_entry();
+	cb->wnd = parent;
+	g_signal_connect(cb->h, "changed", (GCallback)_ffui_combo_changed, cb);
+}
 
 #define ffui_combo_set(c, i)  gtk_combo_box_set_active((GtkComboBox*)(c)->h, i)
 #define ffui_combo_active(c)  gtk_combo_box_get_active((GtkComboBox*)(c)->h)
@@ -27,4 +32,8 @@ static inline ffstr ffui_combo_text_active(ffui_combobox *c) {
 	s.ptr = ffsz_dupn(sz, s.len);
 	g_free(sz);
 	return s;
+}
+
+static inline void ffui_combo_text_set(ffui_combobox *c, const char *sz) {
+	gtk_entry_set_text(GTK_ENTRY(gtk_bin_get_child(GTK_BIN((GtkComboBoxText*)(c)->h))), sz);
 }

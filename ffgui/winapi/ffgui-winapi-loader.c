@@ -40,6 +40,7 @@ static void state_reset2(ffui_loader *g)
 	g->r.cx = 200;
 	g->r.cy = 20;
 	g->style_horizontal = 0;
+	g->f_cbx_editable = 0;
 	g->auto_pos = 1;
 	g->man_pos = 0;
 	state_reset(g);
@@ -923,11 +924,30 @@ static int new_editbox(ffconf_scheme *cs, ffui_loader *g)
 }
 
 
+static int combobox_style(ffconf_scheme *cs, ffui_loader *g, ffstr val)
+{
+	if (ffstr_eqcz(&val, "editable"))
+		g->f_cbx_editable = 1;
+	else
+		return ctl_style(cs, g, val);
+	return 0;
+}
 static int cbx_on_change(ffconf_scheme *cs, ffui_loader *g, ffstr val)
 {
 	if (!(g->actl.combx->change_id = g->getcmd(g->udata, &val)))
 		return FFUI_EINVAL;
 	return 0;
+}
+static int combobox_done(ffconf_scheme *cs, ffui_loader *g)
+{
+	if (g->f_cbx_editable) {
+		if (ffui_combo_create(g->actl.ctl, g->wnd))
+			return FFUI_ENOMEM;
+	} else {
+		if (ffui_combo_createlist(g->actl.ctl, g->wnd))
+			return FFUI_ENOMEM;
+	}
+	return ctl_done(cs, g);
 }
 static const ffconf_arg combx_args[] = {
 	{ "font",		T_OBJ,		_F(label_font) },
@@ -935,18 +955,15 @@ static const ffconf_arg combx_args[] = {
 	{ "position",	T_INTLIST_S,_F(ctl_pos) },
 	{ "resize",		T_STRLIST,	_F(ctl_resize) },
 	{ "size",		T_INTLIST,	_F(ctl_size) },
-	{ "style",		T_STRLIST,	_F(ctl_style) },
+	{ "style",		T_STRLIST,	_F(combobox_style) },
 	{ "text",		T_STR,		_F(label_text) },
-	{ NULL,			T_CLOSE,	_F(ctl_done) },
+	{ NULL,			T_CLOSE,	_F(combobox_done) },
 };
 
 static int new_combobox(ffconf_scheme *cs, ffui_loader *g)
 {
 	if (NULL == (g->actl.ctl = ldr_getctl(g, &cs->objval)))
 		return FFUI_EINVAL;
-
-	if (0 != ffui_combo_createlist(g->actl.ctl, g->wnd))
-		return FFUI_ENOMEM;
 
 	state_reset2(g);
 	g->resize_flags |= F_RESIZE_CX;
