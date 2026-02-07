@@ -53,6 +53,8 @@ struct ffui_comboboxxx : ffui_combobox {
 
 	void	set(int index) { ffui_combo_set(this, index); }
 	int		get() { return ffui_combo_active(this); }
+
+	void	enable(bool val) { ffui_ctl_enable(this, val); }
 };
 
 struct ffui_trackbarxx : ffui_trackbar {
@@ -60,6 +62,8 @@ struct ffui_trackbarxx : ffui_trackbar {
 	uint	get() { return ffui_track_val(this); }
 
 	void	range(uint range) { ffui_post_track_range_set(this, range); }
+
+	void	enable(bool val) { ffui_ctl_enable(this, val); }
 };
 
 struct ffui_tabxx : ffui_tab {

@@ -485,62 +485,36 @@ void ffui_wnd_setpopup(ffui_window *w, ffui_window *parent)
 	g_signal_connect(w->h, "key_press_event", G_CALLBACK(_ffui_wnd_key_press_event), w);
 }
 
-static const ushort _ffui_ikeys[] = {
-	GDK_KEY_BackSpace,
-	GDK_KEY_Break,
-	GDK_KEY_Delete,
-	GDK_KEY_Down,
-	GDK_KEY_End,
-	GDK_KEY_Return,
-	GDK_KEY_Escape,
-	GDK_KEY_F1,
-	GDK_KEY_F10,
-	GDK_KEY_F11,
-	GDK_KEY_F12,
-	GDK_KEY_F2,
-	GDK_KEY_F3,
-	GDK_KEY_F4,
-	GDK_KEY_F5,
-	GDK_KEY_F6,
-	GDK_KEY_F7,
-	GDK_KEY_F8,
-	GDK_KEY_F9,
-	GDK_KEY_Home,
-	GDK_KEY_Insert,
-	GDK_KEY_Left,
-	GDK_KEY_Right,
-	GDK_KEY_space,
-	GDK_KEY_Tab,
-	GDK_KEY_Up,
-};
-
-static const char *const _ffui_keystr[] = {
-	"backspace",
-	"break",
-	"delete",
-	"down",
-	"end",
-	"enter",
-	"escape",
-	"f1",
-	"f10",
-	"f11",
-	"f12",
-	"f2",
-	"f3",
-	"f4",
-	"f5",
-	"f6",
-	"f7",
-	"f8",
-	"f9",
-	"home",
-	"insert",
-	"left",
-	"right",
-	"space",
-	"tab",
-	"up",
+static const struct {
+	char name[10];
+	ushort key;
+} _ffui_keys[] = {
+	{ "backspace",	GDK_KEY_BackSpace, },
+	{ "break",		GDK_KEY_Break, },
+	{ "delete",		GDK_KEY_Delete, },
+	{ "down",		GDK_KEY_Down, },
+	{ "end",		GDK_KEY_End, },
+	{ "enter",		GDK_KEY_Return, },
+	{ "escape",		GDK_KEY_Escape, },
+	{ "f1",			GDK_KEY_F1, },
+	{ "f10",		GDK_KEY_F10, },
+	{ "f11",		GDK_KEY_F11, },
+	{ "f12",		GDK_KEY_F12, },
+	{ "f2",			GDK_KEY_F2, },
+	{ "f3",			GDK_KEY_F3, },
+	{ "f4",			GDK_KEY_F4, },
+	{ "f5",			GDK_KEY_F5, },
+	{ "f6",			GDK_KEY_F6, },
+	{ "f7",			GDK_KEY_F7, },
+	{ "f8",			GDK_KEY_F8, },
+	{ "f9",			GDK_KEY_F9, },
+	{ "home",		GDK_KEY_Home, },
+	{ "insert",		GDK_KEY_Insert, },
+	{ "left",		GDK_KEY_Left, },
+	{ "right",		GDK_KEY_Right, },
+	{ "space",		GDK_KEY_space, },
+	{ "tab",		GDK_KEY_Tab, },
+	{ "up",			GDK_KEY_Up, },
 };
 
 ffui_hotkey ffui_hotkey_parse(const char *s, ffsize len)
@@ -589,10 +563,10 @@ ffui_hotkey ffui_hotkey_parse(const char *s, ffsize len)
 			goto fail; // unknown key
 
 	} else {
-		ffssize ikey = ffszarr_ifindsorted(_ffui_keystr, FF_COUNT(_ffui_keystr), v.ptr, v.len);
+		ffssize ikey = ffcharr_ifind_sorted_padding(_ffui_keys, FF_COUNT(_ffui_keys), sizeof(_ffui_keys[0].name), sizeof(_ffui_keys[0].key), v.ptr, v.len);
 		if (ikey == -1)
 			goto fail; // unknown key
-		r |= _ffui_ikeys[ikey];
+		r |= _ffui_keys[ikey].key;
 	}
 
 	return r;

@@ -46,7 +46,7 @@ static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l);
 
 
 struct ctlinfo {
-	const char *stype;
+	char stype[12];
 	const wchar_t *sid;
 	uint style;
 	uint exstyle;
@@ -98,74 +98,42 @@ void ffui_uninit(void)
 }
 
 
-static const byte _ffui_ikeys[] = {
-	VK_OEM_7,
-	VK_OEM_2,
-	VK_OEM_4,
-	VK_OEM_5,
-	VK_OEM_6,
-	VK_OEM_3,
-	VK_BACK,
-	VK_PAUSE,
-	VK_DELETE,
-	VK_DOWN,
-	VK_END,
-	VK_RETURN,
-	VK_ESCAPE,
-	VK_F1,
-	VK_F10,
-	VK_F11,
-	VK_F12,
-	VK_F2,
-	VK_F3,
-	VK_F4,
-	VK_F5,
-	VK_F6,
-	VK_F7,
-	VK_F8,
-	VK_F9,
-	VK_HOME,
-	VK_INSERT,
-	VK_LEFT,
-	VK_RIGHT,
-	VK_SPACE,
-	VK_TAB,
-	VK_UP,
-};
-
-static const char *const _ffui_keystr[] = {
-	"'",
-	"/",
-	"[",
-	"\\",
-	"]",
-	"`",
-	"backspace",
-	"break",
-	"delete",
-	"down",
-	"end",
-	"enter",
-	"escape",
-	"f1",
-	"f10",
-	"f11",
-	"f12",
-	"f2",
-	"f3",
-	"f4",
-	"f5",
-	"f6",
-	"f7",
-	"f8",
-	"f9",
-	"home",
-	"insert",
-	"left",
-	"right",
-	"space",
-	"tab",
-	"up",
+static const struct {
+	char name[11];
+	ffbyte key;
+} _ffui_keys[] = {
+	{ /*39*/ "'",	VK_OEM_7, },
+	{ /*47*/ "/",	VK_OEM_2, },
+	{ /*91*/ "[",	VK_OEM_4, },
+	{ /*92*/ "\\",	VK_OEM_5, },
+	{ /*93*/ "]",	VK_OEM_6, },
+	{ /*96*/ "`",	VK_OEM_3, },
+	{ "backspace",	VK_BACK, },
+	{ "break",		VK_PAUSE, },
+	{ "delete",		VK_DELETE, },
+	{ "down",		VK_DOWN, },
+	{ "end",		VK_END, },
+	{ "enter",		VK_RETURN, },
+	{ "escape",		VK_ESCAPE, },
+	{ "f1",			VK_F1, },
+	{ "f10",		VK_F10, },
+	{ "f11",		VK_F11, },
+	{ "f12",		VK_F12, },
+	{ "f2",			VK_F2, },
+	{ "f3",			VK_F3, },
+	{ "f4",			VK_F4, },
+	{ "f5",			VK_F5, },
+	{ "f6",			VK_F6, },
+	{ "f7",			VK_F7, },
+	{ "f8",			VK_F8, },
+	{ "f9",			VK_F9, },
+	{ "home",		VK_HOME, },
+	{ "insert",		VK_INSERT, },
+	{ "left",		VK_LEFT, },
+	{ "right",		VK_RIGHT, },
+	{ "space",		VK_SPACE, },
+	{ "tab",		VK_TAB, },
+	{ "up",			VK_UP, },
 };
 
 ffui_hotkey ffui_hotkey_parse(const char *s, size_t len)
@@ -205,10 +173,10 @@ ffui_hotkey ffui_hotkey_parse(const char *s, size_t len)
 		r |= v.ptr[0];
 
 	else {
-		ssize_t ikey = ffszarr_ifindsorted(_ffui_keystr, FF_COUNT(_ffui_keystr), v.ptr, v.len);
+		ssize_t ikey = ffcharr_ifind_sorted_padding(_ffui_keys, FF_COUNT(_ffui_keys), sizeof(_ffui_keys[0].name), sizeof(_ffui_keys[0].key), v.ptr, v.len);
 		if (ikey == -1)
 			goto fail; //unknown key
-		r |= _ffui_ikeys[ikey];
+		r |= _ffui_keys[ikey].key;
 	}
 
 	return r;
