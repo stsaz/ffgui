@@ -49,10 +49,12 @@ struct ffui_loader {
 	ffui_ldr_getctl_t getctl;
 	ffui_ldr_getcmd_t getcmd;
 	void *udata;
+	ffstr conf;
+	uint conf_line, conf_col;
 
 	char language[2];
 	ffvec lang_data_def, lang_data;
-	ffmap vars; // hash(name) -> struct var*
+	ffmap vars; // hash(name) -> struct guivar*
 
 	/** Module handle to load resource objects from */
 	HMODULE hmod_resource;
@@ -103,6 +105,7 @@ struct ffui_loader {
 	uint man_pos :1;
 	uint style_reset :1;
 	uint f_cbx_editable :1;
+	uint wnd_complete :1;
 };
 
 /** Initialize GUI loader.
@@ -116,7 +119,14 @@ FF_EXTERN void ffui_ldr_fin(ffui_loader *g);
 
 #define ffui_ldr_errstr(g)  ((g)->errstr)
 
-FF_EXTERN int ffui_ldr_load(ffui_loader *g, ffstr data);
+static inline void ffui_ldr_source(ffui_loader *g, ffstr path, ffstr data)
+{
+	g->path = path;
+	g->conf = data;
+}
+
+/** Partially load GUI. */
+FF_EXTERN int ffui_ldr_load(ffui_loader *g, const char *window);
 
 /** Load GUI from file. */
 FF_EXTERN int ffui_ldr_loadfile(ffui_loader *g, const char *fn);

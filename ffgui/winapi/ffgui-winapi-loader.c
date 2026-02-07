@@ -1555,8 +1555,8 @@ static int wnd_done(ffconf_scheme *cs, ffui_loader *g)
 		ffui_show(g->wnd, 1);
 	}
 
+	g->wnd_complete = 1;
 	g->wnd = NULL;
-	ffmem_free(g->wnd_name);  g->wnd_name = NULL;
 	return 0;
 }
 static const ffconf_arg wnd_args[] = {
@@ -1613,16 +1613,19 @@ end:
 
 static int new_wnd(ffconf_scheme *cs, ffui_loader *g)
 {
-	ffui_window *wnd;
+	ffmem_free(g->wnd_name);  g->wnd_name = NULL;
 
-	if (NULL == (wnd = g->getctl(g->udata, &cs->objval)))
+	ffui_window *wnd;
+	ffstr name = *ffconf_scheme_objval(cs);
+
+	if (!(wnd = g->getctl(g->udata, &name)))
 		return FFUI_EINVAL;
 
 	uint off = FF_OFF(ffui_loader, wnd);
 	ffmem_zero((byte*)g + off, sizeof(ffui_loader) - off);
 
 	g->wnd = wnd;
-	if (NULL == (g->wnd_name = ffsz_dupn(cs->objval.ptr, cs->objval.len)))
+	if (!(g->wnd_name = ffsz_dupn(name.ptr, name.len)))
 		return FFUI_ENOMEM;
 	g->actl.ctl = (ffui_ctl*)wnd;
 	if (0 != ffui_wnd_create(wnd))
@@ -1641,9 +1644,10 @@ static int new_wnd(ffconf_scheme *cs, ffui_loader *g)
 // LANGUAGE
 static int inc_lang_entry(ffconf_scheme *cs, ffui_loader *g, ffstr fn)
 {
-	const ffstr *lang = ffconf_scheme_keyname(cs);
-	if (!(ffstr_eqz(lang, "default")
-		|| ffstr_eq(lang, g->language, 2)))
+	ffstr lang = *ffconf_scheme_keyname(cs);
+	unsigned def = 0;
+	if (!((def = ffstr_eqz(&lang, "default"))
+		|| ffstr_eq(&lang, g->language, 2)))
 		return 0;
 	if (g->lang_data.len != 0)
 		return FFUI_EINVAL;
@@ -1661,7 +1665,7 @@ static int inc_lang_entry(ffconf_scheme *cs, ffui_loader *g, ffstr fn)
 
 end:
 	if (rc == 0) {
-		if (ffstr_eqz(lang, "default"))
+		if (def)
 			g->lang_data_def = d;
 		else
 			g->lang_data = d;
@@ -1721,23 +1725,65 @@ static void* ldr_getctl(ffui_loader *g, const ffstr *name)
 	return g->getctl(g->udata, &s);
 }
 
-int ffui_ldr_load(ffui_loader *g, ffstr data)
+int ffui_ldr_load(ffui_loader *g, const char *window)
 {
-	ffstr errstr = {};
-	int r = ffconf_parse_object(top_args, g, &data, 0, &errstr);
-	if (r != 0) {
-		ffmem_free(g->errstr);
-		g->errstr = ffsz_dupstr(&errstr);
+	int r, r2 = 0;
+	struct ffconf_obj c = {
+		.lt.line = g->conf_line,
+		.lt.line_off = g->conf_col,
+	};
+
+	ffconf_scheme cs = {};
+	ffconf_scheme_addctx(&cs, top_args, g);
+
+	ffstr val = {};
+	while (g->conf.len) {
+		if (FFCONF_ERROR == (r = ffconf_obj_read(&c, &g->conf, &val)))
+			goto end;
+
+		if ((r2 = ffconf_scheme_process(&cs, r, val))) {
+			r = r2;
+			goto end;
+		}
+
+		if (g->wnd_complete && window && ffsz_eq(g->wnd_name, window)) {
+			// Stop after we've finished loading the target window
+			g->conf_line = c.lt.line;
+			g->conf_col = c.lt.line_off;
+			break;
+		}
 	}
 
-	ffstr_free(&errstr);
+	ffstr_null(&val);
+	r = 0;
+
+end:
+	ffconf_scheme_destroy(&cs);
+	if (ffconf_obj_fin(&c) && r == 0)
+		r = FFCONF_ERROR;
+
+	if (r != 0) {
+		char errbuf[100];
+		const char *err = ffconf_error(&c.lt);
+		if (r2 != 0) {
+			err = cs.errmsg;
+			if (r2 != FFCONF_ERROR) {
+				ffsz_format(errbuf, sizeof(errbuf), "%d", r2);
+				err = errbuf;
+			}
+		}
+		g->errstr = ffsz_allocfmt("%u:%u: near \"%S\": %s"
+			, (int)ffconf_line(&c.lt), (int)ffconf_col(&c.lt)
+			, &val
+			, err);
+	}
+
 	return r;
 }
 
 int ffui_ldr_loadfile(ffui_loader *g, const char *fn)
 {
 	ffpath_splitpath(fn, ffsz_len(fn), &g->path, NULL);
-	g->path.len += FFS_LEN("/");
 
 	ffstr errstr = {};
 	int r = ffconf_parse_file(top_args, g, fn, 0, &errstr, 1*1024*1024);

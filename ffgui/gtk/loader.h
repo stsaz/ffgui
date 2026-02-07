@@ -35,12 +35,13 @@ typedef struct ffui_loader {
 	ffui_ldr_getctl_t getctl;
 	ffui_ldr_getcmd_t getcmd;
 	void *udata;
-	ffstr path;
+	ffstr path, conf;
 	ffvec accels; //ffui_wnd_hotkey[]
+	uint conf_line, conf_col;
 
 	char language[2];
 	ffvec lang_data_def, lang_data;
-	ffmap vars; // hash(name) -> struct var*
+	ffmap vars; // hash(name) -> struct guivar*
 
 	_ffui_ldr_icon ico;
 	_ffui_ldr_icon ico_ctl;
@@ -68,7 +69,7 @@ typedef struct ffui_loader {
 	};
 
 	char *errstr;
-	char *wndname;
+	char *wnd_name;
 
 	union {
 	uint flags;
@@ -77,6 +78,7 @@ typedef struct ffui_loader {
 		uint f_horiz_prev :1;
 		uint f_loadconf :1; // ffui_ldr_loadconf()
 		uint f_cbx_editable :1;
+		uint wnd_complete :1;
 	};
 	};
 } ffui_loader;
@@ -91,6 +93,15 @@ FF_EXTERN void ffui_ldr_init(ffui_loader *g, ffui_ldr_getctl_t getctl, ffui_ldr_
 FF_EXTERN void ffui_ldr_fin(ffui_loader *g);
 
 #define ffui_ldr_errstr(g)  ((g)->errstr)
+
+static inline void ffui_ldr_source(ffui_loader *g, ffstr path, ffstr data)
+{
+	g->path = path;
+	g->conf = data;
+}
+
+/** Partially load GUI. */
+FF_EXTERN int ffui_ldr_load(ffui_loader *g, const char *window);
 
 /** Load GUI from file. */
 FF_EXTERN int ffui_ldr_loadfile(ffui_loader *g, const char *fn);
