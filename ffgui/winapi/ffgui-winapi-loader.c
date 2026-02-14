@@ -1542,6 +1542,7 @@ static int wnd_done(ffconf_scheme *cs, ffui_loader *g)
 			return FFUI_ESYS;
 	}
 
+	g->wnd->min_height = g->edge_bottom;
 	if ((uint)g->wnd_pos.cx < g->edge_right
 		|| (uint)g->wnd_pos.cy - 40 < g->edge_bottom) {
 		// Increase the window's width+height so that all controls are fully visible

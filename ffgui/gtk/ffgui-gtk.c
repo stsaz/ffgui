@@ -459,14 +459,30 @@ static gboolean _ffui_wnd_onclose(void *a, void *b, gpointer udata)
 	return 0;
 }
 
+/** Resize the window (once) so that all its widgets are visible */
+static gboolean vbox_draw(GtkWidget* self, cairo_t* cr, gpointer udata)
+{
+	ffui_window *w = udata;
+	sig_disable(w->vbox, vbox_draw, udata);
+	int ww = gtk_widget_get_allocated_width(self);
+	int h = gtk_widget_get_allocated_height(self);
+	gtk_window_resize(w->h, ww, h);
+	return 0;
+}
+
 int ffui_wnd_create(ffui_window *w)
 {
 	w->uid = FFUI_UID_WINDOW;
 	w->h = (void*)gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	w->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_container_add(GTK_CONTAINER(w->h), w->vbox);
 	g_object_set_data(G_OBJECT(w->h), "ffdata", w);
 	g_signal_connect(w->h, "delete-event", G_CALLBACK(_ffui_wnd_onclose), w);
+
+	GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_add(GTK_CONTAINER(w->h), scroll);
+
+	w->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_container_add(GTK_CONTAINER(scroll), w->vbox);
+	g_signal_connect(w->vbox, "draw", G_CALLBACK(vbox_draw), w);
 	return 0;
 }
 

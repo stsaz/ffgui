@@ -705,13 +705,10 @@ void ffui_tray_create(ffui_trayicon *t, ffui_window *wnd)
 }
 
 
-void paned_resize(ffui_paned *pn, ffui_window *wnd)
+void paned_resize(ffui_paned *pn, ffui_window *wnd, RECT r)
 {
-	RECT r;
 	ffui_pos cr[FF_COUNT(pn->items)];
 	uint i, n, x = 0, y = 0, cx, cy, f;
-
-	GetClientRect(wnd->h, &r);
 
 	if (wnd->stbar != NULL) {
 		getpos_noscale(wnd->stbar->h, &cr[0]);
@@ -1325,6 +1322,45 @@ static void _ffui_trackbar_scroll(ffui_trackbar *tb, ffui_window *wnd, uint w)
 		wnd->on_action(wnd, action_id);
 }
 
+static void _ffui_wnd_scroll(ffui_window *wnd, uint w)
+{
+	SCROLLINFO si = {
+		.cbSize = sizeof(SCROLLINFO),
+		.fMask = SIF_ALL,
+	};
+	GetScrollInfo(wnd->h, SB_VERT, &si);
+	int y = si.nPos, n = si.nPos;
+	_ffui_log(" nPos:%d  nTrackPos:%d", si.nPos, si.nTrackPos);
+
+	switch (LOWORD(w)) {
+	case SB_THUMBTRACK:
+		n = si.nTrackPos;  break;
+	case SB_PAGEUP:
+		n -= si.nPage;  break;
+	case SB_PAGEDOWN:
+		n += si.nPage;  break;
+	case SB_LINEUP:
+		n--;  break;
+	case SB_LINEDOWN:
+		n++;  break;
+	default:
+		return;
+	}
+
+	if (n < 0 || n == y)
+		return;
+
+	si.fMask = SIF_POS;
+	si.nPos = n;
+	SetScrollInfo(wnd->h, SB_VERT, &si, 1);
+	GetScrollInfo(wnd->h, SB_VERT, &si);
+	if (n > si.nPos)
+		return;
+
+	ScrollWindow(wnd->h, 0, y - n, NULL, NULL);
+	UpdateWindow(wnd->h);
+}
+
 static int _ffui_wnd_ctlcolor(ffui_window *wnd, void *ctl, HDC hdc, ffsize *code)
 {
 	union ffui_anyctl c;
@@ -1344,6 +1380,41 @@ static int _ffui_wnd_ctlcolor(ffui_window *wnd, void *ctl, HDC hdc, ffsize *code
 		return 1;
 	}
 	return 0;
+}
+
+static void _ffui_wnd_size(ffui_window *wnd, RECT rect)
+{
+	if (rect.bottom < (int)wnd->min_height) {
+		// Add vertical scroll bar when window size becomes less than it should be
+		if (wnd->vscroll)
+			return;
+		wnd->vscroll = 1;
+		_ffui_style_set(wnd, WS_VSCROLL);
+
+		SCROLLINFO si = {
+			.cbSize = sizeof(SCROLLINFO),
+			.fMask = SIF_RANGE | SIF_PAGE,
+			.nMax = wnd->min_height,
+			.nPage = 10,
+		};
+		SetScrollInfo(wnd->h, SB_VERT, &si, 1);
+
+	} else if (wnd->vscroll) {
+		// Reset scroll bar position and window scroll position; hide scroll bar
+		wnd->vscroll = 0;
+
+		SCROLLINFO si = {
+			.cbSize = sizeof(SCROLLINFO),
+			.fMask = SIF_POS,
+		};
+		GetScrollInfo(wnd->h, SB_VERT, &si);
+		int y = si.nPos;
+		si.nPos = 0;
+		SetScrollInfo(wnd->h, SB_VERT, &si, 1);
+
+		ScrollWindow(wnd->h, 0, y, NULL, NULL);
+		_ffui_style_clear(wnd, WS_VSCROLL);
+	}
 }
 
 /*
@@ -1381,6 +1452,10 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 	case WM_HSCROLL:
 	case WM_VSCROLL:
 		print("WM_HSCROLL", h, w, l);
+		if (!l) {
+			_ffui_wnd_scroll(wnd, (int)w);
+			break;
+		}
 		if (NULL == (c.ctl = ffui_getctl((HWND)l)))
 			break;
 		switch ((int)c.ctl->uid) {
@@ -1453,10 +1528,16 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 		// print("WM_SIZE", h, w, l);
 		if (l == 0)
 			break; //window has been minimized
+		RECT rect = {
+			.bottom = HIWORD(l),
+			.right = LOWORD(l),
+		};
+
+		_ffui_wnd_size(wnd, rect);
 
 		ffui_paned *p;
 		for (p = wnd->paned_first;  p != NULL;  p = p->next) {
-			paned_resize(p, wnd);
+			paned_resize(p, wnd, rect);
 		}
 
 		if (wnd->stbar != NULL)
