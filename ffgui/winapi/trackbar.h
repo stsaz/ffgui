@@ -3,8 +3,7 @@
 
 typedef struct ffui_trackbar {
 	FFUI_CTL;
-	uint scroll_id;
-	uint scrolling_id;
+	ushort scroll_id, scrolling_id;
 	uint thumbtrk :1; //prevent trackbar from updating position while user's holding it
 } ffui_trackbar;
 

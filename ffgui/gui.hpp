@@ -22,6 +22,7 @@ struct ffui_editxx : ffui_edit {
 	void	sel_all() { ffui_edit_selall(this); }
 
 	void	focus() { ffui_ctl_focus(this); }
+	void	enable(bool val) { ffui_ctl_enable(this, val); }
 };
 
 struct ffui_textxx : ffui_text {
@@ -43,6 +44,8 @@ struct ffui_checkboxxx : ffui_checkbox {
 	bool	checked() { return ffui_send_checkbox_checked(this); }
 
 	void	text(const char *sz) { ffui_send_checkbox_settextz(this, sz); }
+
+	void	enable(bool val) { ffui_ctl_enable(this, val); }
 };
 
 struct ffui_comboboxxx : ffui_combobox {

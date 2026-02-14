@@ -24,10 +24,10 @@ struct ffui_view {
 	ffui_window *wnd;
 	GtkTreeModel *store;
 	GtkCellRenderer *rend;
-	uint dblclick_id;
-	uint dropfile_id;
-	uint dispinfo_id;
-	uint edit_id;
+	ushort dblclick_id;
+	ushort dropfile_id;
+	ushort dispinfo_id;
+	ushort edit_id;
 	ffui_menu *popup_menu;
 
 	union {

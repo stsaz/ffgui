@@ -9,8 +9,8 @@ typedef struct ffui_edit {
 	enum FFUI_UID uid;
 	const char *name;
 	HFONT font;
-	uint change_id;
-	uint focus_id, focus_lose_id;
+	ushort change_id;
+	ushort focus_id, focus_lose_id;
 } ffui_edit;
 typedef ffui_edit ffui_text;
 

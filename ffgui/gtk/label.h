@@ -7,6 +7,7 @@ typedef struct ffui_label {
 
 static inline int ffui_label_create(ffui_label *l, ffui_window *parent) {
 	l->h = gtk_label_new("");
+	gtk_label_set_xalign(GTK_LABEL(l->h), 0);
 	l->wnd = parent;
 	return 0;
 }

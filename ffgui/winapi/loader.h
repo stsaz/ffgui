@@ -51,6 +51,7 @@ struct ffui_loader {
 	void *udata;
 	ffstr conf;
 	uint conf_line, conf_col;
+	void *cs;
 
 	char language[2];
 	ffvec lang_data_def, lang_data;

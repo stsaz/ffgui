@@ -10,16 +10,15 @@ typedef struct ffui_view {
 	const char *name;
 	HFONT font;
 	ffui_menu *pmenu;
-	int chsel_id;
-	int lclick_id;
-	int dblclick_id;
-	int colclick_id; //"col" is set to column #
-	int edit_id; // "text" contains the text edited by user
-	int check_id; //checkbox has been (un)checked.  "idx" is the item index.
+	ushort chsel_id;
+	ushort lclick_id, dblclick_id;
+	ushort colclick_id; // "col" is set to column #
+	ushort edit_id; // "text" contains the text edited by user
+	ushort check_id; // checkbox has been (un)checked.  "idx" is the item index.
 
 	/** Owner-data callback.  User must fill in "dispinfo_item" object.
 	Must be set before ffui_view_create(). */
-	int dispinfo_id;
+	ushort dispinfo_id;
 
 	union {
 	int idx;

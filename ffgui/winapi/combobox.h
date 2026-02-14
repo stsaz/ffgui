@@ -6,11 +6,10 @@ typedef struct ffui_combobox {
 	enum FFUI_UID uid;
 	const char *name;
 	HFONT font;
-	uint change_id;
-	uint popup_id;
-	uint closeup_id;
-	uint edit_change_id;
-	uint edit_update_id;
+	ushort change_id;
+	ushort popup_id, closeup_id;
+	ushort edit_change_id;
+	ushort edit_update_id;
 } ffui_combobox;
 
 static inline int ffui_combo_create(ffui_ctl *c, ffui_window *parent) {

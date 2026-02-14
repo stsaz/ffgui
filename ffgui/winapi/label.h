@@ -6,8 +6,7 @@ typedef struct ffui_label {
 	HFONT font;
 	HCURSOR cursor;
 	uint color;
-	uint click_id;
-	uint click2_id;
+	ushort click_id, click2_id;
 	WNDPROC oldwndproc;
 } ffui_label;
 

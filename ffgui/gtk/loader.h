@@ -38,6 +38,7 @@ typedef struct ffui_loader {
 	ffstr path, conf;
 	ffvec accels; //ffui_wnd_hotkey[]
 	uint conf_line, conf_col;
+	void *cs;
 
 	char language[2];
 	ffvec lang_data_def, lang_data;

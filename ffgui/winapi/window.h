@@ -36,10 +36,8 @@ struct ffui_window {
 	/** WM_PAINT handler. */
 	void (*on_paint)(ffui_window *wnd);
 
-	uint onclose_id;
-	uint onminimize_id;
-	uint onmaximize_id;
-	uint onactivate_id;
+	ushort onclose_id;
+	ushort onminimize_id, onmaximize_id, onactivate_id;
 };
 
 FF_EXTERN int ffui_wnd_initstyle();
