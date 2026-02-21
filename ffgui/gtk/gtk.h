@@ -74,6 +74,7 @@ static inline void ffui_show(void *c, uint show) {
 }
 
 #define ffui_ctl_focus(c)  gtk_widget_grab_focus((c)->h)
+#define ffui_ctl_focused(c)  gtk_widget_is_focus((c)->h)
 
 #define ffui_ctl_enable(c, val)  ffui_post(c, FFUI_CTL_ENABLE, (void*)(ffsize)val)
 

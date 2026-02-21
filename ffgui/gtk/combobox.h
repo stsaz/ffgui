@@ -19,7 +19,11 @@ static inline void ffui_combo_create_editable(ffui_combobox *cb, ffui_window *pa
 	g_signal_connect(cb->h, "changed", (GCallback)_ffui_combo_changed, cb);
 }
 
-#define ffui_combo_set(c, i)  gtk_combo_box_set_active((GtkComboBox*)(c)->h, i)
+static inline void ffui_combo_set(ffui_combobox *cb, uint i) {
+	g_signal_handlers_block_by_func(cb->h, (void*)_ffui_combo_changed, cb);
+	gtk_combo_box_set_active((GtkComboBox*)cb->h, i);
+	g_signal_handlers_unblock_by_func(cb->h, (void*)_ffui_combo_changed, cb);
+}
 #define ffui_combo_active(c)  gtk_combo_box_get_active((GtkComboBox*)(c)->h)
 
 #define ffui_combo_add(c, text)  gtk_combo_box_text_append_text((GtkComboBoxText*)(c)->h, text)

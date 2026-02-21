@@ -290,6 +290,7 @@ static inline void ffui_ctl_invalidate(void *ctl) {
 }
 
 #define ffui_ctl_focus(c)  SetFocus((c)->h)
+#define ffui_ctl_focused(c)  ((c)->h == GetFocus())
 
 /** Enable or disable the control */
 #define ffui_ctl_enable(c, enable)  EnableWindow((c)->h, enable)

@@ -714,8 +714,17 @@ static int tray_lclick(ffui_loader *g, ffstr val)
 		return FFUI_EINVAL;
 	return 0;
 }
+static int tray_done(ffui_loader *g)
+{
+	ffui_icon ico;
+	if (icon_done(g, &ico))
+		ffui_tray_seticon(g->trayicon, &ico);
+	return 0;
+}
 static const ffconf_arg tray_args[] = {
-	{ "lclick",	T_STR,	_F(tray_lclick) },
+	{ "icon",	T_OBJ,		_F(icon_new) },
+	{ "lclick",	T_STR,		_F(tray_lclick) },
+	{ NULL,		T_CLOSE,	_F(tray_done) },
 	{}
 };
 static int tray_new(ffui_loader *g, ffstr name)

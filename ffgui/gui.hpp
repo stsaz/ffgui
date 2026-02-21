@@ -81,6 +81,10 @@ struct ffui_statusbarxx : ffui_statusbar {
 	void	text(const char *sz) { ffui_send_status_settextz(this, sz); }
 };
 
+struct ffui_trayiconxx : ffui_trayicon {
+	void show(bool val) { ffui_tray_show(this, val); }
+};
+
 struct ffui_viewitemxx : ffui_viewitem {
 	ffui_viewitemxx(ffstr s) { ffmem_zero_obj(this); ffui_view_settextstr(this, &s); }
 };
