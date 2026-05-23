@@ -58,6 +58,8 @@ FF_EXTERN int ffui_wnd_create(ffui_window *w);
 
 #define ffui_desktop(w)  (w)->h = GetDesktopWindow()
 
+FF_EXTERN int ffui_wnd_theme(ffui_window *w, uint flags);
+
 #define ffui_send_wnd_settext(c, sz)  ffui_settext(c, sz, ffsz_len(sz))
 
 #define ffui_wnd_front(w)  (w)->h = GetForegroundWindow()

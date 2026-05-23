@@ -4,7 +4,6 @@
 #include <ffgui/winapi/loader.h>
 #include <ffsys/path.h>
 #include <ffsys/file.h>
-#include <ffsys/dylib.h>
 
 
 static void* ldr_getctl(ffui_loader *g, ffstr name);
@@ -860,6 +859,9 @@ static int new_checkbox(ffui_loader *g, ffstr name)
 	if (0 != ffui_checkbox_create(g->actl.ctl, g->wnd))
 		return FFUI_ENOMEM;
 
+	if (g->dark_mode)
+		SetWindowTheme(g->actl.ctl->h, L"", L"");
+
 	state_reset2(g);
 	g->r.cx = 400;
 	add_ctx(g, chbox_args);
@@ -1084,7 +1086,8 @@ static int view_style(ffui_loader *g, ffstr val)
 		break;
 
 	case VIEW_STYLE_EXPLORER_THEME:
-		ffui_view_settheme(g->actl.view);
+		if (!g->dark_mode)
+			ffui_view_settheme(g->actl.view);
 		break;
 
 	case VIEW_STYLE_HORIZ:
@@ -1581,25 +1584,6 @@ static const ffconf_arg wnd_args[] = {
 	{ NULL,			T_CLOSE,	_F(wnd_done) },
 };
 
-static void _ffui_wnd_dark_title_set(ffui_window *w)
-{
-	ffdl dl;
-	if (FFDL_NULL == (dl = ffdl_open("dwmapi.dll", 0)))
-		return;
-
-	typedef void (*DwmSetWindowAttribute_t)(void*, DWORD, void*, DWORD);
-	DwmSetWindowAttribute_t _DwmSetWindowAttribute;
-	if (!(_DwmSetWindowAttribute = ffdl_addr(dl, "DwmSetWindowAttribute")))
-		goto end;
-
-	const uint _DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-	BOOL value = 1;
-	_DwmSetWindowAttribute(w->h, _DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
-
-end:
-	ffdl_close(dl);
-}
-
 static int new_wnd(ffui_loader *g, ffstr name)
 {
 	ffmem_free(g->wnd_name);  g->wnd_name = NULL;
@@ -1619,10 +1603,8 @@ static int new_wnd(ffui_loader *g, ffstr name)
 	if (0 != ffui_wnd_create(wnd))
 		return FFUI_ENOMEM;
 
-	if (g->dark_mode && !g->dark_title_set) {
-		g->dark_title_set = 1;
-		_ffui_wnd_dark_title_set(g->wnd);
-	}
+	if (g->dark_mode)
+		ffui_wnd_theme(g->wnd, ~0U);
 
 	add_ctx(g, wnd_args);
 	return 0;

@@ -97,6 +97,24 @@ void ffui_uninit(void)
 	_ffui_dpi = 0;
 }
 
+int ffui_app_theme(uint flags)
+{
+	int rc = -1;
+	HMODULE uxt;
+	if (!(uxt = LoadLibraryExW(L"uxtheme.dll", NULL, 0)))
+		return rc;
+
+	typedef void (WINAPI *SetPreferredAppMode_t)(int);
+	SetPreferredAppMode_t _SetPreferredAppMode;
+	if ((_SetPreferredAppMode = (void*)GetProcAddress(uxt, MAKEINTRESOURCEA(135)))) {
+		_SetPreferredAppMode(1);
+		rc = 0;
+	}
+
+	FreeLibrary(uxt);
+	return rc;
+}
+
 
 static const struct {
 	char name[11];
@@ -804,6 +822,30 @@ int ffui_wnd_destroy(ffui_window *w)
 		DestroyWindow(w->ttip);
 
 	return ffui_ctl_destroy(w);
+}
+
+int ffui_wnd_theme(ffui_window *w, uint flags)
+{
+	int rc = -1;
+	typedef void (*DwmSetWindowAttribute_t)(void*, DWORD, void*, DWORD);
+	static DwmSetWindowAttribute_t _DwmSetWindowAttribute;
+	if (!_DwmSetWindowAttribute) {
+		HMODULE dwm;
+		if (!(dwm = LoadLibraryExW(L"dwmapi.dll", NULL, 0)))
+			return rc;
+		// FreeLibrary();
+
+		_DwmSetWindowAttribute = (void*)GetProcAddress(dwm, "DwmSetWindowAttribute");
+	}
+
+	if (_DwmSetWindowAttribute) {
+		const uint _DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+		BOOL value = 1;
+		_DwmSetWindowAttribute(w->h, _DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
+		rc = 0;
+	}
+
+	return rc;
 }
 
 void ffui_wnd_opacity(ffui_window *w, uint percent)
@@ -1569,6 +1611,7 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 		break;
 
 	case WM_CTLCOLORBTN:
+	case WM_CTLCOLOREDIT:
 	case WM_CTLCOLORLISTBOX:
 	case WM_CTLCOLORSCROLLBAR:
 	case WM_CTLCOLORSTATIC:

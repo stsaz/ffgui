@@ -33,6 +33,7 @@ typedef struct ffui_window ffui_window;
 
 FF_EXTERN int ffui_init(void);
 FF_EXTERN void ffui_uninit(void);
+FF_EXTERN int ffui_app_theme(uint flags);
 
 FF_EXTERN uint _ffui_dpi;
 FF_EXTERN RECT _ffui_screen_area;
