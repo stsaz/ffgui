@@ -796,7 +796,6 @@ int ffui_wnd_create(ffui_window *w)
 {
 	ffui_pos r = { 0, 0, CW_USEDEFAULT, CW_USEDEFAULT };
 	w->uid = FFUI_UID_WINDOW;
-	w->color = ~0U;
 	if (w->on_action == NULL)
 		w->on_action = &wnd_onaction;
 	return 0 == hwnd_create(FFUI_UID_WINDOW, L"", NULL, &r
@@ -809,9 +808,6 @@ int ffui_wnd_destroy(ffui_window *w)
 {
 	if (w->trayicon != NULL)
 		ffui_tray_show(w->trayicon, 0);
-
-	if (w->bgcolor != NULL)
-		DeleteObject(w->bgcolor);
 
 	ffui_wnd_ghotkey_unreg(w);
 
@@ -1407,14 +1403,20 @@ static int _ffui_wnd_ctlcolor(ffui_window *wnd, void *ctl, HDC hdc, ffsize *code
 {
 	union ffui_anyctl c;
 	c.ctl = ctl;
-	HBRUSH br = wnd->bgcolor;
-	uint color = wnd->color;
+
+	HBRUSH br = NULL;
+	uint color = ~0U;
+	if (wnd->theme) {
+		br = wnd->theme->bg;
+		color = wnd->theme->color;
+	}
 	if (c.ctl != NULL && c.ctl->uid == FFUI_UID_LABEL && c.lbl->color != 0)
 		color = c.lbl->color;
-	if (color != ~0U)
-		SetTextColor(hdc, color);
 
 	if (color != ~0U || br != NULL) {
+		if (color != ~0U)
+			SetTextColor(hdc, color);
+
 		SetBkMode(hdc, TRANSPARENT);
 		if (br == NULL)
 			br = GetSysColorBrush(COLOR_BTNFACE);
@@ -1600,11 +1602,11 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 		break;
 
 	case WM_ERASEBKGND:
-		if (wnd->bgcolor != NULL) {
+		if (wnd->theme && wnd->theme->bg) {
 			HDC hdc = (HDC)w;
 			RECT rect;
 			GetClientRect(h, &rect);
-			FillRect(hdc, &rect, wnd->bgcolor);
+			FillRect(hdc, &rect, wnd->theme->bg);
 			*code = 1;
 			return 1;
 		}

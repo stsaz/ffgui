@@ -4,13 +4,32 @@
 #pragma once
 #include <ffgui/winapi/winapi.h>
 
+typedef struct ffui_theme ffui_theme;
+struct ffui_theme {
+	uint color; // default color for child controls
+	HBRUSH bg; // background brush
+};
+
+static inline void ffui_theme_init(ffui_theme *t) {
+	t->color = ~0U;
+}
+
+static inline void ffui_theme_destroy(ffui_theme *t) {
+	DeleteObject(t->bg);
+}
+
+/** Set background color */
+static inline void ffui_theme_bgcolor(ffui_theme *t, uint color) {
+	DeleteObject(t->bg);
+	t->bg = CreateSolidBrush(color);
+}
+
 struct ffui_window {
 	HWND h;
 	enum FFUI_UID uid;
 	const char *name;
 	HFONT font;
-	HBRUSH bgcolor;
-	uint color; // default color for child controls
+	ffui_theme *theme;
 	ushort min_height;
 	uint top :1 //quit message loop if the window is closed
 		, hide_on_close :1 //window doesn't get destroyed when it's closed
@@ -73,13 +92,6 @@ static inline void ffui_wnd_icon(ffui_window *w, ffui_icon *big_ico, ffui_icon *
 static inline void ffui_wnd_seticon(ffui_window *w, const ffui_icon *big_ico, const ffui_icon *small_ico) {
 	ffui_ctl_send(w, WM_SETICON, ICON_SMALL, small_ico->h);
 	ffui_ctl_send(w, WM_SETICON, ICON_BIG, big_ico->h);
-}
-
-/** Set background color. */
-static inline void ffui_wnd_bgcolor(ffui_window *w, uint color) {
-	if (w->bgcolor != NULL)
-		DeleteObject(w->bgcolor);
-	w->bgcolor = CreateSolidBrush(color);
 }
 
 FF_EXTERN void ffui_wnd_opacity(ffui_window *w, uint percent);

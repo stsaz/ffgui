@@ -1470,12 +1470,13 @@ static int wnd_style(ffui_loader *g, ffstr val)
 static int wnd_bgcolor(ffui_loader *g, ffstr val)
 {
 	uint clr;
-
 	if (ffstr_eqcz(&val, "null"))
 		clr = GetSysColor(COLOR_BTNFACE);
 	else if ((uint)-1 == (clr = ffpic_color(val.ptr, val.len)))
 		return FFUI_EINVAL;
-	ffui_wnd_bgcolor(g->wnd, clr);
+	if (!g->wnd->theme)
+		return FFUI_EINVAL;
+	ffui_theme_bgcolor(g->wnd->theme, clr);
 	return 0;
 }
 
@@ -1484,7 +1485,9 @@ static int wnd_color(ffui_loader *g, ffstr val)
 	uint clr;
 	if ((uint)-1 == (clr = ffpic_color(val.ptr, val.len)))
 		return FFUI_EINVAL;
-	g->wnd->color = clr;
+	if (!g->wnd->theme)
+		return FFUI_EINVAL;
+	g->wnd->theme->color = clr;
 	return 0;
 }
 
@@ -1498,7 +1501,7 @@ static int wnd_onclose(ffui_loader *g, ffstr val)
 static int wnd_popupfor(ffui_loader *g, ffstr val)
 {
 	ffui_ctl *parent = g->getctl(g->udata, &val);
-	if (parent == NULL) return FFUI_EINVAL;
+	if (parent == NULL || parent->uid != FFUI_UID_WINDOW) return FFUI_EINVAL;
 
 	SetWindowLongPtr(g->wnd->h, GWLP_HWNDPARENT, (LONG_PTR)parent->h);
 	ffui_wnd_setpopup(g->wnd);
@@ -1605,6 +1608,7 @@ static int new_wnd(ffui_loader *g, ffstr name)
 
 	if (g->dark_mode)
 		ffui_wnd_theme(g->wnd, ~0U);
+	g->wnd->theme = g->theme;
 
 	add_ctx(g, wnd_args);
 	return 0;
