@@ -7,7 +7,6 @@ typedef struct ffui_label {
 	HCURSOR cursor;
 	uint color;
 	ushort click_id, click2_id;
-	WNDPROC oldwndproc;
 } ffui_label;
 
 static inline int ffui_label_create(ffui_label *c, ffui_window *parent) {
@@ -18,6 +17,4 @@ static inline int ffui_label_create(ffui_label *c, ffui_window *parent) {
 
 /**
 type: enum FFUI_CUR */
-static inline void ffui_label_setcursor(ffui_label *c, uint type) {
-	ffui_ctl_setcursor(c, LoadCursorW(NULL, (wchar_t*)(size_t)type));
-}
+FF_EXTERN void ffui_label_setcursor(ffui_label *c, uint type);

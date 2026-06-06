@@ -4,32 +4,11 @@
 #pragma once
 #include <ffgui/winapi/winapi.h>
 
-typedef struct ffui_theme ffui_theme;
-struct ffui_theme {
-	uint color; // default color for child controls
-	HBRUSH bg; // background brush
-};
-
-static inline void ffui_theme_init(ffui_theme *t) {
-	t->color = ~0U;
-}
-
-static inline void ffui_theme_destroy(ffui_theme *t) {
-	DeleteObject(t->bg);
-}
-
-/** Set background color */
-static inline void ffui_theme_bgcolor(ffui_theme *t, uint color) {
-	DeleteObject(t->bg);
-	t->bg = CreateSolidBrush(color);
-}
-
 struct ffui_window {
 	HWND h;
 	enum FFUI_UID uid;
 	const char *name;
 	HFONT font;
-	ffui_theme *theme;
 	ushort min_height;
 	uint top :1 //quit message loop if the window is closed
 		, hide_on_close :1 //window doesn't get destroyed when it's closed
@@ -76,8 +55,6 @@ FF_EXTERN int ffui_wndproc(ffui_window *wnd, ffsize *code, HWND h, uint msg, ffs
 FF_EXTERN int ffui_wnd_create(ffui_window *w);
 
 #define ffui_desktop(w)  (w)->h = GetDesktopWindow()
-
-FF_EXTERN int ffui_wnd_theme(ffui_window *w, uint flags);
 
 #define ffui_send_wnd_settext(c, sz)  ffui_settext(c, sz, ffsz_len(sz))
 

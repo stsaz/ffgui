@@ -859,8 +859,7 @@ static int new_checkbox(ffui_loader *g, ffstr name)
 	if (0 != ffui_checkbox_create(g->actl.ctl, g->wnd))
 		return FFUI_ENOMEM;
 
-	if (g->dark_mode)
-		SetWindowTheme(g->actl.ctl->h, L"", L"");
+	dark_theme_ctl(g->dark_theme, DARK_THEME_CHECKBOX, g->actl.ctl->h);
 
 	state_reset2(g);
 	g->r.cx = 400;
@@ -1037,7 +1036,6 @@ static int new_tab(ffui_loader *g, ffstr name)
 enum {
 	VIEW_STYLE_CHECKBOXES,
 	VIEW_STYLE_EDITABLE,
-	VIEW_STYLE_EXPLORER_THEME,
 	VIEW_STYLE_FULL_ROW_SELECT,
 	VIEW_STYLE_GRID_LINES,
 	VIEW_STYLE_HAS_BUTTONS,
@@ -1049,7 +1047,6 @@ enum {
 static const char view_styles[][16] = {
 	"checkboxes",
 	"editable",
-	"explorer_theme",
 	"full_row_select",
 	"grid_lines",
 	"has_buttons",
@@ -1078,16 +1075,12 @@ static int view_style(ffui_loader *g, ffstr val)
 		break;
 
 	case VIEW_STYLE_GRID_LINES:
-		ListView_SetExtendedListViewStyleEx(g->actl.view->h, LVS_EX_GRIDLINES, LVS_EX_GRIDLINES);
+		if (!g->dark_theme)
+			ListView_SetExtendedListViewStyleEx(g->actl.view->h, LVS_EX_GRIDLINES, LVS_EX_GRIDLINES);
 		break;
 
 	case VIEW_STYLE_CHECKBOXES:
 		ListView_SetExtendedListViewStyleEx(g->actl.view->h, LVS_EX_CHECKBOXES, LVS_EX_CHECKBOXES);
-		break;
-
-	case VIEW_STYLE_EXPLORER_THEME:
-		if (!g->dark_mode)
-			ffui_view_settheme(g->actl.view);
 		break;
 
 	case VIEW_STYLE_HORIZ:
@@ -1106,13 +1099,6 @@ static int tview_style(ffui_loader *g, ffstr val)
 
 	case VIEW_STYLE_CHECKBOXES:
 		_ffui_style_set(g->actl.view, TVS_CHECKBOXES);
-		break;
-
-	case VIEW_STYLE_EXPLORER_THEME:
-		ffui_view_settheme(g->actl.view);
-#if FF_WIN >= 0x0600
-		TreeView_SetExtendedStyle(g->actl.view->h, TVS_EX_FADEINOUTEXPANDOS, TVS_EX_FADEINOUTEXPANDOS);
-#endif
 		break;
 
 	case VIEW_STYLE_FULL_ROW_SELECT:
@@ -1264,6 +1250,8 @@ static int new_listview(ffui_loader *g, ffstr name)
 
 	if (0 != ffui_view_create(g->actl.view, g->wnd))
 		return FFUI_ENOMEM;
+
+	dark_theme_ctl(g->dark_theme, DARK_THEME_LISTVIEW, g->actl.view->h);
 
 	state_reset(g);
 	g->r.cx = 200;
@@ -1467,30 +1455,6 @@ static int wnd_style(ffui_loader *g, ffstr val)
 	return 0;
 }
 
-static int wnd_bgcolor(ffui_loader *g, ffstr val)
-{
-	uint clr;
-	if (ffstr_eqcz(&val, "null"))
-		clr = GetSysColor(COLOR_BTNFACE);
-	else if ((uint)-1 == (clr = ffpic_color(val.ptr, val.len)))
-		return FFUI_EINVAL;
-	if (!g->wnd->theme)
-		return FFUI_EINVAL;
-	ffui_theme_bgcolor(g->wnd->theme, clr);
-	return 0;
-}
-
-static int wnd_color(ffui_loader *g, ffstr val)
-{
-	uint clr;
-	if ((uint)-1 == (clr = ffpic_color(val.ptr, val.len)))
-		return FFUI_EINVAL;
-	if (!g->wnd->theme)
-		return FFUI_EINVAL;
-	g->wnd->theme->color = clr;
-	return 0;
-}
-
 static int wnd_onclose(ffui_loader *g, ffstr val)
 {
 	if (!(g->wnd->onclose_id = g->getcmd(g->udata, &val)))
@@ -1555,11 +1519,9 @@ static int wnd_done(ffui_loader *g)
 	return 0;
 }
 static const ffconf_arg wnd_args[] = {
-	{ "bgcolor",	T_STR,		_F(wnd_bgcolor) },
 	{ "borderstick",FFCONF_TINT8,_F(wnd_borderstick) },
 	{ "button",		T_OBJS_ARG,	_F(new_button) },
 	{ "checkbox",	T_OBJS_ARG,	_F(new_checkbox) },
-	{ "color",		T_STR,		_F(wnd_color) },
 	{ "combobox",	T_OBJS_ARG,	_F(new_combobox) },
 	{ "editbox",	T_OBJS_ARG,	_F(new_editbox) },
 	{ "font",		T_OBJ,		_F(label_font) },
@@ -1606,9 +1568,10 @@ static int new_wnd(ffui_loader *g, ffstr name)
 	if (0 != ffui_wnd_create(wnd))
 		return FFUI_ENOMEM;
 
-	if (g->dark_mode)
-		ffui_wnd_theme(g->wnd, ~0U);
-	g->wnd->theme = g->theme;
+	dark_theme_ctl(g->dark_theme, DARK_THEME_WINDOW_TITLE, g->wnd->h);
+	if (!g->dark_theme_wnd_manual)
+		dark_theme_ctl(g->dark_theme, DARK_THEME_WINDOW, g->wnd->h);
+	dark_theme_ctl(g->dark_theme, DARK_THEME_WINDOW_MAIN_MENU, g->wnd->h);
 
 	add_ctx(g, wnd_args);
 	return 0;

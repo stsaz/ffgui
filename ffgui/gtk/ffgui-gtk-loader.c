@@ -615,13 +615,11 @@ static int viewcol_new(ffui_loader *g, ffstr name)
 
 enum {
 	VIEW_STYLE_EDITABLE,
-	VIEW_STYLE_EXPLORER_THEME,
 	VIEW_STYLE_GRID_LINES,
 	VIEW_STYLE_MULTI_SELECT,
 };
 static const char view_styles_sorted[][16] = {
 	"editable",
-	"explorer_theme", // compat
 	"grid_lines",
 	"multi_select",
 };
@@ -640,9 +638,6 @@ static int view_style(ffui_loader *g, ffstr val)
 
 	case VIEW_STYLE_EDITABLE:
 		ffui_view_style(g->view, FFUI_VIEW_EDITABLE, FFUI_VIEW_EDITABLE);
-		break;
-
-	case VIEW_STYLE_EXPLORER_THEME:
 		break;
 
 	default:

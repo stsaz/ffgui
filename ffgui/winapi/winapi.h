@@ -5,6 +5,7 @@
 #define UNICODE
 #define _UNICODE
 #include <ffsys/error.h>
+#include <ffgui/winapi/dark-theme.h>
 #include <ffsys/path.h>
 #include <ffbase/vector.h>
 #include <commctrl.h>
@@ -33,10 +34,10 @@ typedef struct ffui_window ffui_window;
 
 FF_EXTERN int ffui_init(void);
 FF_EXTERN void ffui_uninit(void);
-FF_EXTERN int ffui_app_theme(uint flags);
 
 FF_EXTERN uint _ffui_dpi;
 FF_EXTERN RECT _ffui_screen_area;
+FF_EXTERN struct dark_theme *ffui_theme;
 
 #define _ffui_dpi_descale(x)  ((x) * 96 / _ffui_dpi)
 #define _ffui_dpi_scale(x)  ((x) * _ffui_dpi / 96)
@@ -306,8 +307,6 @@ FF_EXTERN int ffui_ctl_destroy(void *c);
 
 /** Get parent control object. */
 FF_EXTERN void* ffui_ctl_parent(void *c);
-
-FF_EXTERN int ffui_ctl_setcursor(void *c, HCURSOR h);
 
 
 // HOTKEYS

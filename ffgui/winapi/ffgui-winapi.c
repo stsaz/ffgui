@@ -20,6 +20,7 @@
 #include <ffgui/winapi/tree.h>
 #include <ffgui/winapi/view.h>
 #include <ffgui/winapi/window.h>
+#include <ffgui/winapi/dark-theme.c>
 #include <ffsys/file.h>
 #include <ffsys/process.h>
 #include <ffsys/dir.h>
@@ -29,6 +30,7 @@
 static uint _curthd_id; //ID of the thread running GUI message loop
 uint _ffui_dpi;
 RECT _ffui_screen_area;
+struct dark_theme *ffui_theme;
 
 enum {
 	_FFUI_WNDSTYLE = 1
@@ -38,8 +40,6 @@ static uint _ffui_flags;
 static void getpos_noscale(HWND h, ffui_pos *r);
 static int setpos_noscale(void *ctl, int x, int y, int cx, int cy, int flags);
 static HWND base_parent(HWND h);
-static void _ffui_ctl_subclass(ffui_label *c);
-static LRESULT __stdcall _ffui_ctl_proc(HWND h, uint msg, WPARAM w, LPARAM l);
 
 static void wnd_onaction(ffui_window *wnd, int id);
 static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l);
@@ -95,24 +95,6 @@ void ffui_uninit(void)
 	if (_ffui_flags & _FFUI_WNDSTYLE)
 		UnregisterClassW(ctls[FFUI_UID_WINDOW].sid, GetModuleHandleW(NULL));
 	_ffui_dpi = 0;
-}
-
-int ffui_app_theme(uint flags)
-{
-	int rc = -1;
-	HMODULE uxt;
-	if (!(uxt = LoadLibraryExW(L"uxtheme.dll", NULL, 0)))
-		return rc;
-
-	typedef void (WINAPI *SetPreferredAppMode_t)(int);
-	SetPreferredAppMode_t _SetPreferredAppMode;
-	if ((_SetPreferredAppMode = (void*)GetProcAddress(uxt, MAKEINTRESOURCEA(135)))) {
-		_SetPreferredAppMode(1);
-		rc = 0;
-	}
-
-	FreeLibrary(uxt);
-	return rc;
 }
 
 
@@ -255,6 +237,9 @@ void ffui_font_set(ffui_font *fnt, const ffstr *name, int height, uint flags)
 }
 
 
+#define _ffui_ctl_subclass(c, func) \
+	SetWindowSubclass((c)->h, func, (UINT_PTR)1, (DWORD_PTR)(c))
+
 static int setpos_noscale(void *ctl, int x, int y, int cx, int cy, int flags)
 {
 	return !SetWindowPos(((ffui_ctl*)ctl)->h, HWND_TOP, x, y, cx, cy, SWP_NOACTIVATE | flags);
@@ -377,18 +362,6 @@ fail:
 	return -1;
 }
 
-
-int ffui_ctl_setcursor(void *c, HCURSOR h)
-{
-	union ffui_anyctl any;
-	any.ctl = c;
-	if (any.ctl->uid == FFUI_UID_LABEL) {
-		any.lbl->cursor = h;
-		_ffui_ctl_subclass(any.lbl);
-	}
-	return 0;
-}
-
 void* ffui_ctl_parent(void *c)
 {
 	ffui_ctl *ctl = c;
@@ -398,39 +371,25 @@ void* ffui_ctl_parent(void *c)
 	return ffui_getctl(h);
 }
 
-static void _ffui_ctl_subclass(ffui_label *c)
+
+static LRESULT WINAPI _ffui_label_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
-	c->oldwndproc = (WNDPROC)SetWindowLongPtrW(c->h, GWLP_WNDPROC, (LONG_PTR)&_ffui_ctl_proc);
-}
-
-static int ffui_ctl_wndproc(ffui_ctl *c, size_t *code, uint msg, size_t w, size_t l)
-{
-	union ffui_anyctl any;
-	any.ctl = c;
-
-	switch (msg) {
-
-	case WM_SETCURSOR: {
-		HCURSOR cur = NULL;
-		if (c->uid == FFUI_UID_LABEL)
-			cur = any.lbl->cursor;
-		if (cur != NULL) {
-			// if (LOWORD(l) == HTCLIENT)
-			SetCursor(cur);
+	ffui_label *c = (void*)dwRefData;
+	switch (uMsg) {
+	case WM_SETCURSOR:
+		if (c->cursor) {
+			SetCursor(c->cursor);
 			return 1;
 		}
 	}
-	}
 
-	if (c->uid == FFUI_UID_LABEL)
-		return CallWindowProc(any.lbl->oldwndproc, c->h, msg, w, l);
-	return 0;
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
-static LRESULT __stdcall _ffui_ctl_proc(HWND h, uint msg, WPARAM w, LPARAM l)
+void ffui_label_setcursor(ffui_label *c, uint type)
 {
-	ffui_ctl *c = ffui_getctl(h);
-	return ffui_ctl_wndproc((void*)c, NULL, msg, w, l);
+	c->cursor = LoadCursorW(NULL, (wchar_t*)(size_t)type);
+	_ffui_ctl_subclass(c, _ffui_label_proc);
 }
 
 
@@ -529,6 +488,8 @@ int ffui_view_create(ffui_view *c, ffui_window *parent)
 	if (0 != ctl_create_f((ffui_ctl*)c, FFUI_UID_LISTVIEW, parent->h, s, 0))
 		return 1;
 
+	SetWindowTheme(c->h, L"Explorer", NULL);
+
 	if (c->dispinfo_id != 0)
 		ListView_SetCallbackMask(c->h, LVIS_STATEIMAGEMASK);
 
@@ -612,8 +573,10 @@ int ffui_tree_create(ffui_tree *t, ffui_window *parent)
 	if (0 != ctl_create_f((ffui_ctl*)t, FFUI_UID_TREEVIEW, parent->h, 0, 0))
 		return 1;
 
+	SetWindowTheme(t->h, L"Explorer", NULL);
+
 #if FF_WIN >= 0x0600
-	int n = TVS_EX_DOUBLEBUFFER;
+	uint n = TVS_EX_DOUBLEBUFFER | TVS_EX_FADEINOUTEXPANDOS;
 	TreeView_SetExtendedStyle(t->h, n, n);
 #endif
 
@@ -818,30 +781,6 @@ int ffui_wnd_destroy(ffui_window *w)
 		DestroyWindow(w->ttip);
 
 	return ffui_ctl_destroy(w);
-}
-
-int ffui_wnd_theme(ffui_window *w, uint flags)
-{
-	int rc = -1;
-	typedef void (*DwmSetWindowAttribute_t)(void*, DWORD, void*, DWORD);
-	static DwmSetWindowAttribute_t _DwmSetWindowAttribute;
-	if (!_DwmSetWindowAttribute) {
-		HMODULE dwm;
-		if (!(dwm = LoadLibraryExW(L"dwmapi.dll", NULL, 0)))
-			return rc;
-		// FreeLibrary();
-
-		_DwmSetWindowAttribute = (void*)GetProcAddress(dwm, "DwmSetWindowAttribute");
-	}
-
-	if (_DwmSetWindowAttribute) {
-		const uint _DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-		BOOL value = 1;
-		_DwmSetWindowAttribute(w->h, _DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
-		rc = 0;
-	}
-
-	return rc;
 }
 
 void ffui_wnd_opacity(ffui_window *w, uint percent)
@@ -1318,12 +1257,14 @@ static int wnd_nfy(ffui_window *wnd, NMHDR *n, size_t *code)
 		return _ffui_view_wm_notify(ctl.view, wnd, n, code);
 	case FFUI_UID_TAB:
 		return _ffui_tab_wm_notify(ctl.tab, wnd, n, code);
-	}
 
-	switch (n->code) {
-	case TVN_SELCHANGED:
-		_ffui_log("TVN_SELCHANGED", 0);
-		id = ctl.view->chsel_id;
+	case FFUI_UID_TREEVIEW:
+		switch (n->code) {
+		case TVN_SELCHANGED:
+			_ffui_log("TVN_SELCHANGED", 0);
+			id = ctl.view->chsel_id;
+			break;
+		}
 		break;
 	}
 
@@ -1399,33 +1340,6 @@ static void _ffui_wnd_scroll(ffui_window *wnd, uint w)
 	UpdateWindow(wnd->h);
 }
 
-static int _ffui_wnd_ctlcolor(ffui_window *wnd, void *ctl, HDC hdc, ffsize *code)
-{
-	union ffui_anyctl c;
-	c.ctl = ctl;
-
-	HBRUSH br = NULL;
-	uint color = ~0U;
-	if (wnd->theme) {
-		br = wnd->theme->bg;
-		color = wnd->theme->color;
-	}
-	if (c.ctl != NULL && c.ctl->uid == FFUI_UID_LABEL && c.lbl->color != 0)
-		color = c.lbl->color;
-
-	if (color != ~0U || br != NULL) {
-		if (color != ~0U)
-			SetTextColor(hdc, color);
-
-		SetBkMode(hdc, TRANSPARENT);
-		if (br == NULL)
-			br = GetSysColorBrush(COLOR_BTNFACE);
-		*code = (size_t)br;
-		return 1;
-	}
-	return 0;
-}
-
 static void _ffui_wnd_size(ffui_window *wnd, RECT rect)
 {
 	if (rect.bottom < (int)wnd->min_height) {
@@ -1491,6 +1405,37 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 			return *code;
 		if (*code != 0)
 			return 1;
+		break;
+
+	case WM_CTLCOLORSTATIC: {
+		if (!(c.ctl = ffui_getctl((HWND)l)))
+			goto apply_theme;
+
+		uint color;
+		HBRUSH br;
+		if (c.ctl->uid == FFUI_UID_LABEL && c.lbl->color) {
+			color = c.lbl->color;
+			br = (ffui_theme) ? ffui_theme->wbr : GetSysColorBrush(COLOR_BTNFACE);
+		} else {
+			goto apply_theme;
+		}
+
+		HDC hdc = (HDC)w;
+		SetTextColor(hdc, color);
+		SetBkMode(hdc, TRANSPARENT);
+		*code = (LRESULT)br;
+		return 1;
+	}
+
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+	case WM_ERASEBKGND:
+apply_theme:
+		if (ffui_theme) {
+			*code = dark_theme_wnd_proc(ffui_theme, h, msg, w, l);
+			if ((ssize_t)*code != -1)
+				return 1;
+		}
 		break;
 
 	case WM_HSCROLL:
@@ -1599,26 +1544,6 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 	case WM_PAINT:
 		if (wnd->on_paint != NULL)
 			wnd->on_paint(wnd);
-		break;
-
-	case WM_ERASEBKGND:
-		if (wnd->theme && wnd->theme->bg) {
-			HDC hdc = (HDC)w;
-			RECT rect;
-			GetClientRect(h, &rect);
-			FillRect(hdc, &rect, wnd->theme->bg);
-			*code = 1;
-			return 1;
-		}
-		break;
-
-	case WM_CTLCOLORBTN:
-	case WM_CTLCOLOREDIT:
-	case WM_CTLCOLORLISTBOX:
-	case WM_CTLCOLORSCROLLBAR:
-	case WM_CTLCOLORSTATIC:
-		if (_ffui_wnd_ctlcolor(wnd, ffui_getctl((HWND)l), (HDC)w, code))
-			return 1;
 		break;
 
 	case WM_DROPFILES:

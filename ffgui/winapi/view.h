@@ -30,7 +30,7 @@ typedef struct ffui_view {
 
 FF_EXTERN int ffui_view_create(ffui_view *c, ffui_window *parent);
 
-#define ffui_view_settheme(v)  SetWindowTheme((v)->h, L"Explorer", NULL)
+FF_EXTERN void ffui_view_theme(ffui_view *c, uint flags);
 
 /** Get index of the item by screen coordinates.
 subitem: optional
