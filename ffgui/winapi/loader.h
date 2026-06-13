@@ -21,7 +21,6 @@
 #include <ffgui/winapi/tree.h>
 #include <ffgui/winapi/view.h>
 #include <ffgui/winapi/window.h>
-#include <ffgui/conf-scheme.h>
 #include <ffgui/vars.h>
 
 

@@ -11,7 +11,6 @@ Not implemented:
 #include <winnt.h>
 #include <vsstyle.h>
 #include "dark-theme.h"
-#include "ffsys/std.h"
 
 static int dkth_os_ver()
 {

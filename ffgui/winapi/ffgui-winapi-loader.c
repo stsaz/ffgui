@@ -2,6 +2,7 @@
 2014, Simon Zolin */
 
 #include <ffgui/winapi/loader.h>
+#include <ffgui/conf-scheme.h>
 #include <ffsys/path.h>
 #include <ffsys/file.h>
 
