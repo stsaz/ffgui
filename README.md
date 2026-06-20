@@ -14,6 +14,7 @@ Other features:
 * Multi-language ready
 * GTK+: asynchronous UI messages
 * GTK+: listview on-demand drawing emulation
+* Win32 API: dark theme support
 * Win32 API: basic vertical-horizontal auto positioning of UI elements and resizing
 * Win32 API: UTF-8
 * Very thin C++ layer that's completely inlined by the compiler

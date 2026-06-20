@@ -1,16 +1,17 @@
 /**
 Not implemented:
-* tabs
-* button
 * combo box
-* multiline edit scrollbars
-* status bar
 
 2026, Simon Zolin */
 
-#include <winnt.h>
-#include <vsstyle.h>
+#define UNICODE
 #include "dark-theme.h"
+#include <uxtheme.h>
+#include <vsstyle.h>
+
+typedef void (WINAPI *AllowDarkModeForWindow_t)(HWND, int);
+typedef void (WINAPI *SetPreferredAppMode_t)(int);
+typedef void (WINAPI *DwmSetWindowAttribute_t)(void*, DWORD, void*, DWORD);
 
 static int dkth_os_ver()
 {
@@ -35,67 +36,23 @@ int dark_theme_init(struct dark_theme *t, unsigned flags)
 		return -1;
 
 	HMODULE uxtheme;
-	if ((uxtheme = LoadLibraryExW(L"uxtheme.dll", NULL, 0))) {
-		t->_ShouldAppsUseDarkMode = (ShouldAppsUseDarkMode_t)(void*)GetProcAddress(uxtheme, MAKEINTRESOURCEA(132));
-		t->_AllowDarkModeForWindow = (AllowDarkModeForWindow_t)(void*)GetProcAddress(uxtheme, MAKEINTRESOURCEA(133));
-		t->_SetPreferredAppMode = (SetPreferredAppMode_t)(void*)GetProcAddress(uxtheme, MAKEINTRESOURCEA(135));
+	if ((uxtheme = LoadLibraryExW(L"uxtheme.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32))) {
+		t->_AllowDarkModeForWindow = GetProcAddress(uxtheme, MAKEINTRESOURCEA(133));
+		t->_SetPreferredAppMode = GetProcAddress(uxtheme, MAKEINTRESOURCEA(135));
 	}
 
 	HMODULE dwmapi;
-	if ((dwmapi = LoadLibraryExW(L"dwmapi.dll", NULL, 0))) {
-		t->_DwmSetWindowAttribute = (DwmSetWindowAttribute_t)(void*)GetProcAddress(dwmapi, "DwmSetWindowAttribute");
+	if ((dwmapi = LoadLibraryExW(L"dwmapi.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32))) {
+		t->_DwmSetWindowAttribute = GetProcAddress(dwmapi, "DwmSetWindowAttribute");
 	}
 
-	return (!t->_ShouldAppsUseDarkMode
-		|| !t->_AllowDarkModeForWindow
-		|| !t->_SetPreferredAppMode
-		|| !t->_DwmSetWindowAttribute);
+	return !(t->_AllowDarkModeForWindow
+		&& t->_SetPreferredAppMode
+		&& t->_DwmSetWindowAttribute);
 }
 
 #define dkth_subclass(h, func, t) \
 	SetWindowSubclass(h, func, (UINT_PTR)1, (DWORD_PTR)(t))
-
-static LRESULT WINAPI dkth_listview_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
-{
-	const struct dark_theme *t = (struct dark_theme*)dwRefData;
-	switch (uMsg) {
-	case WM_NOTIFY:
-		if (((NMHDR*)lParam)->code == NM_CUSTOMDRAW) {
-			const NMCUSTOMDRAW *nmcd = (NMCUSTOMDRAW*)lParam;
-			switch (nmcd->dwDrawStage) {
-			case CDDS_PREPAINT:
-				return CDRF_NOTIFYITEMDRAW;
-
-			case CDDS_ITEMPREPAINT:
-				SetTextColor(nmcd->hdc, t->listview_header);
-				return CDRF_NEWFONT;
-
-			default:
-				return CDRF_DODEFAULT;
-			}
-		}
-	}
-
-	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
-}
-
-static int dkth_listview(struct dark_theme *t, HWND h)
-{
-	if (t->_AllowDarkModeForWindow) {
-		HWND lvh = ListView_GetHeader(h);
-		t->_AllowDarkModeForWindow(lvh, 1);
-		SetWindowTheme(lvh, L"ItemsView", NULL);
-
-		t->_AllowDarkModeForWindow(h, 1);
-		SetWindowTheme(h, L"Explorer", NULL);
-	}
-
-	dkth_subclass(h, dkth_listview_proc, t);
-	SendMessageW(h, LVM_SETBKCOLOR, 0, t->listview_bg);
-	SendMessageW(h, LVM_SETTEXTBKCOLOR, 0, t->listview_bg);
-	SendMessageW(h, LVM_SETTEXTCOLOR, 0, t->listview_text);
-	return 0;
-}
 
 LRESULT WINAPI dark_theme_wnd_proc(struct dark_theme *t, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -106,14 +63,14 @@ LRESULT WINAPI dark_theme_wnd_proc(struct dark_theme *t, HWND hWnd, UINT uMsg, W
 		HDC hdc = (HDC)wParam;
 		SetTextColor(hdc, t->text);
 		SetBkMode(hdc, TRANSPARENT);
-		return (LRESULT)t->wbr;
+		return (LRESULT)t->window_bg_br;
 	}
 
 	case WM_ERASEBKGND: {
 		HDC hdc = (HDC)wParam;
 		RECT rect;
 		GetClientRect(hWnd, &rect);
-		FillRect(hdc, &rect, t->wbr);
+		FillRect(hdc, &rect, t->window_bg_br);
 		return 1;
 	}
 	}
@@ -169,7 +126,7 @@ static LRESULT WINAPI dkth_mmenu_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		r.right -= r_wnd.left;
 		r.bottom -= r_wnd.top;
 
-		FillRect(m->hdc, &r, t->wbr);
+		FillRect(m->hdc, &r, t->window_bg_br);
 		return 1;
 	}
 
@@ -177,8 +134,8 @@ static LRESULT WINAPI dkth_mmenu_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		struct UAHDRAWMENUITEM *dmi = (void*)lParam;
 
 		// Background
-		HBRUSH br = (dmi->dis.itemState & (ODS_HOTLIGHT | ODS_SELECTED)) ? t->mmlbr
-			: t->wbr;
+		HBRUSH br = (dmi->dis.itemState & (ODS_HOTLIGHT | ODS_SELECTED)) ? t->menu_light_br
+			: t->window_bg_br;
 		FillRect(dmi->m.hdc, &dmi->dis.rcItem, br);
 
 		// Get text
@@ -197,7 +154,7 @@ static LRESULT WINAPI dkth_mmenu_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		DTTOPTS opts = {
 			.dwSize = sizeof(opts),
 			.dwFlags = DTT_TEXTCOLOR,
-			.crText = t->text,
+			.crText = t->text_alt,
 		};
 		DrawThemeTextEx(t->thmenu, dmi->m.hdc, MENU_BARITEM, MBI_NORMAL, buf, mii.cch, flags, &dmi->dis.rcItem, &opts);
 		return 1;
@@ -223,10 +180,166 @@ static LRESULT WINAPI dkth_mmenu_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 		// Draw the line under the main menu
 		HDC hdc = GetWindowDC(hWnd);
-		FillRect(hdc, &r, t->wbr);
+		FillRect(hdc, &r, t->window_bg_br);
 		ReleaseDC(hWnd, hdc);
 
 		return res;
+	}
+	}
+
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+static LRESULT WINAPI dkth_tab_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	struct dark_theme *t = (void*)dwRefData;
+
+	switch (uMsg) {
+	case WM_PAINT: {
+		POINT cursor;
+		GetCursorPos(&cursor);
+		ScreenToClient(hWnd, &cursor);
+
+		RECT r, rs[16], *rr = rs;
+		unsigned n = TabCtrl_GetItemCount(hWnd);
+		int i_sel = TabCtrl_GetCurSel(hWnd);
+		int i_hl = -1;
+		HFONT font = (HFONT)SendMessageW(hWnd, WM_GETFONT, 0, 0);
+		HANDLE heap = NULL;
+		if (n > sizeof(rs) / sizeof(rs[0])) {
+			heap = GetProcessHeap();
+			if (!(rr = HeapAlloc(heap, 0, sizeof(RECT) * n)))
+				break;
+		}
+
+		for (unsigned i = 0;  i < n;  i++) {
+			TabCtrl_GetItemRect(hWnd, i, &rr[i]);
+			if (i != (unsigned)i_sel && PtInRect(&rr[i], cursor))
+				i_hl = i;
+		}
+
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		IntersectClipRect(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom);
+
+		// Background
+		GetClientRect(hWnd, &r);
+		FillRect(hdc, &r, t->window_bg_br);
+		if (i_sel >= 0) {
+			FillRect(hdc, &rr[i_sel], t->tab_sel_br);
+			if (t->tab_frame_br)
+				FrameRect(hdc, &rr[i_sel], t->tab_frame_br);
+		}
+		if (i_hl >= 0)
+			FillRect(hdc, &rr[i_hl], t->tab_light_br);
+
+		// Text
+		SetBkMode(hdc, TRANSPARENT);
+		SetTextColor(hdc, t->text_alt);
+		SelectObject(hdc, font);
+
+		for (unsigned i = 0;  i < n;  i++) {
+			wchar_t title[256];
+			TCITEMW tci = {
+				.mask = TCIF_TEXT,
+				.pszText = title,
+				.cchTextMax = sizeof(title) / 2 - 1,
+			};
+			TabCtrl_GetItem(hWnd, i, &tci);
+			DrawTextW(hdc, title, -1, &rr[i], DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+		}
+
+		if (rr != rs)
+			HeapFree(heap, 0, rr);
+		EndPaint(hWnd, &ps);
+		return 0;
+	}
+	}
+
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+static LRESULT WINAPI dkth_listview_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	const struct dark_theme *t = (struct dark_theme*)dwRefData;
+	switch (uMsg) {
+	case WM_NOTIFY:
+		if (((NMHDR*)lParam)->code == NM_CUSTOMDRAW) {
+			const NMCUSTOMDRAW *nmcd = (NMCUSTOMDRAW*)lParam;
+			switch (nmcd->dwDrawStage) {
+			case CDDS_PREPAINT:
+				return CDRF_NOTIFYITEMDRAW;
+
+			case CDDS_ITEMPREPAINT:
+				SetTextColor(nmcd->hdc, t->listview_header);
+				return CDRF_NEWFONT;
+
+			default:
+				return CDRF_DODEFAULT;
+			}
+		}
+	}
+
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+static int dkth_listview(struct dark_theme *t, HWND h)
+{
+	if (t->_AllowDarkModeForWindow) {
+		HWND lvh = ListView_GetHeader(h);
+		((AllowDarkModeForWindow_t)t->_AllowDarkModeForWindow)(lvh, 1);
+		SetWindowTheme(lvh, L"ItemsView", NULL);
+
+		((AllowDarkModeForWindow_t)t->_AllowDarkModeForWindow)(h, 1);
+		SetWindowTheme(h, L"Explorer", NULL);
+	}
+
+	dkth_subclass(h, dkth_listview_proc, t);
+	ListView_SetBkColor(h, t->listview_bg);
+	ListView_SetTextBkColor(h, t->listview_bg);
+	ListView_SetTextColor(h, t->listview_text);
+	return 0;
+}
+
+static LRESULT WINAPI dkth_stbar_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	struct dark_theme *t = (void*)dwRefData;
+
+	switch (uMsg) {
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+
+		HFONT font = (HFONT)SendMessageW(hWnd, WM_GETFONT, 0, 0);
+		SelectObject(hdc, font);
+		SetBkMode(hdc, TRANSPARENT);
+		SetTextColor(hdc, t->text_alt);
+
+		unsigned n = SendMessageW(hWnd, SB_GETPARTS, 0, 0);
+		for (unsigned i = 0;  i < n;  i++) {
+			RECT r;
+			SendMessageW(hWnd, SB_GETRECT, i, (LPARAM)&r);
+
+			unsigned len = SendMessageW(hWnd, SB_GETTEXTLENGTHW, i, 0);
+			wchar_t buf[256];
+			if (len + 1 <= sizeof(buf) / 2) {
+				SendMessageW(hWnd, SB_GETTEXTW, i, (LPARAM)buf);
+			} else {
+				len = 3;
+				buf[0] = buf[1] = buf[2] = L'.';
+			}
+			DrawTextW(hdc, buf, len, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		}
+
+		EndPaint(hWnd, &ps);
+		return 0;
+	}
+
+	case WM_ERASEBKGND: {
+		RECT r;
+		GetClientRect(hWnd, &r);
+		FillRect((HDC)wParam, &r, t->window_bg_br);
+		return 1;
 	}
 	}
 
@@ -239,14 +352,15 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 		return 1;
 
 	switch (flags & 0xff) {
-	case DARK_THEME_QUERY:
-		if (t->_ShouldAppsUseDarkMode)
-			return (t->_ShouldAppsUseDarkMode() & 1);
-		break;
+	case DARK_THEME_QUERY: {
+		DWORD data, cap = sizeof(data);
+		return (!RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", L"AppsUseLightTheme", RRF_RT_REG_DWORD, NULL, &data, &cap)
+			&& data == 0);
+	}
 
 	case DARK_THEME_APP:
 		if (t->_SetPreferredAppMode) {
-			t->_SetPreferredAppMode(1);
+			((SetPreferredAppMode_t)t->_SetPreferredAppMode)(2);
 			return 0;
 		}
 		break;
@@ -255,31 +369,50 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 		if (t->_DwmSetWindowAttribute) {
 			const unsigned _DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 			BOOL value = 1;
-			t->_DwmSetWindowAttribute(h, _DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
+			((DwmSetWindowAttribute_t)t->_DwmSetWindowAttribute)(h, _DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
 			return 0;
 		}
 		break;
 
 	case DARK_THEME_WINDOW:
-		if (!t->wbr)
-			t->wbr = CreateSolidBrush(t->background);
+		if (!t->window_bg_br)
+			t->window_bg_br = CreateSolidBrush(t->background);
 		dkth_subclass(h, dkth_window_proc, t);
 		return 0;
 
 	case DARK_THEME_WINDOW_MAIN_MENU:
 		if (!t->thmenu)
 			t->thmenu = OpenThemeData(h, L"Menu");
-		if (!t->mmlbr)
-			t->mmlbr = CreateSolidBrush(t->menu_bg_light);
+		if (!t->menu_light_br)
+			t->menu_light_br = CreateSolidBrush(t->menu_bg_light);
 		dkth_subclass(h, dkth_mmenu_proc, t);
+		return 0;
+
+	case DARK_THEME_BUTTON:
+	case DARK_THEME_EDIT:
+		SetWindowTheme(h, L"DarkMode_Explorer", NULL);
 		return 0;
 
 	case DARK_THEME_CHECKBOX:
 		SetWindowTheme(h, L"", L"");
 		return 0;
 
+	case DARK_THEME_TAB:
+		if (!t->tab_light_br)
+			t->tab_light_br = CreateSolidBrush(t->tab_bg_light);
+		if (!t->tab_sel_br)
+			t->tab_sel_br = CreateSolidBrush(t->tab_bg_sel);
+		if (!t->tab_frame_br && t->tab_frame_sel != t->tab_bg_sel)
+			t->tab_frame_br = CreateSolidBrush(t->tab_frame_sel);
+		dkth_subclass(h, dkth_tab_proc, t);
+		return 0;
+
 	case DARK_THEME_LISTVIEW:
 		return dkth_listview(t, h);
+
+	case DARK_THEME_STATUSBAR:
+		dkth_subclass(h, dkth_stbar_proc, t);
+		return 0;
 	}
 
 	return -1;

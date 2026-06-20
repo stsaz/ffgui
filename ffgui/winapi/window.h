@@ -50,9 +50,8 @@ enum {
 	FFUI_WM_USER_TRAY = WM_USER + 1000
 };
 
-FF_EXTERN int ffui_wndproc(ffui_window *wnd, ffsize *code, HWND h, uint msg, ffsize w, ffsize l);
-
-FF_EXTERN int ffui_wnd_create(ffui_window *w);
+FF_EXTERN int ffui_wnd_create2(ffui_window *w, uint flags);
+#define ffui_wnd_create(w)  ffui_wnd_create2(w, 0)
 
 #define ffui_desktop(w)  (w)->h = GetDesktopWindow()
 
@@ -80,25 +79,23 @@ FF_EXTERN int ffui_wnd_destroy(ffui_window *w);
 #define ffui_wnd_pos(w, pos) \
 	ffui_getpos2(w, pos, FFUI_FPOS_DPISCALE)
 
+/** Set minimum width and height for the window */
+FF_EXTERN void ffui_wnd_size_min(ffui_window *w, uint width_min, uint height_min);
+
 /** Get window placement.
 Return SW_*. */
 static inline uint ffui_wnd_placement(ffui_window *w, ffui_pos *pos) {
 	WINDOWPLACEMENT pl = {};
 	pl.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(w->h, &pl);
+	_ffui_rect_unscale(&pl.rcNormalPosition);
 	ffui_pos_fromrect(pos, &pl.rcNormalPosition);
 	if (pl.showCmd == SW_SHOWNORMAL && !IsWindowVisible(w->h))
 		pl.showCmd = SW_HIDE;
 	return pl.showCmd;
 }
 
-static inline void ffui_wnd_setplacement(ffui_window *w, uint showcmd, const ffui_pos *pos) {
-	WINDOWPLACEMENT pl = {};
-	pl.length = sizeof(WINDOWPLACEMENT);
-	pl.showCmd = showcmd;
-	ffui_pos_torect(pos, &pl.rcNormalPosition);
-	SetWindowPlacement(w->h, &pl);
-}
+FF_EXTERN void ffui_wnd_setplacement(ffui_window *w, uint showcmd, const ffui_pos *pos);
 #define ffui_post_wnd_place(w, showcmd, pos)  ffui_wnd_setplacement(w, showcmd, pos)
 
 FF_EXTERN int ffui_wnd_tooltip(ffui_window *w, ffui_ctl *ctl, const char *text, ffsize len);

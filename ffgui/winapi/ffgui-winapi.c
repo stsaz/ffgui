@@ -37,10 +37,6 @@ enum {
 };
 static uint _ffui_flags;
 
-static void getpos_noscale(HWND h, ffui_pos *r);
-static int setpos_noscale(void *ctl, int x, int y, int cx, int cy, int flags);
-static HWND base_parent(HWND h);
-
 static void wnd_onaction(ffui_window *wnd, int id);
 static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l);
 
@@ -54,7 +50,7 @@ struct ctlinfo {
 
 static const struct ctlinfo ctls[] = {
 	{ "",			L"",			0, 0 },
-	{ "window",		L"FF_WNDCLASS",	WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0 },
+	{ "window",		L"",			0, 0 },
 	{ "label",		L"STATIC",		SS_NOTIFY, 0 },
 	{ "image",		L"STATIC",		SS_ICON | SS_NOTIFY, 0 },
 	{ "editbox",	L"EDIT",		ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_NOHIDESEL | WS_TABSTOP, WS_EX_CLIENTEDGE },
@@ -93,7 +89,7 @@ int ffui_init(void)
 void ffui_uninit(void)
 {
 	if (_ffui_flags & _FFUI_WNDSTYLE)
-		UnregisterClassW(ctls[FFUI_UID_WINDOW].sid, GetModuleHandleW(NULL));
+		UnregisterClassW(L"FFGUI_WNDCLASS", GetModuleHandleW(NULL));
 	_ffui_dpi = 0;
 }
 
@@ -270,10 +266,7 @@ void ffui_getpos2(void *ctl, ffui_pos *r, uint flags)
 		getpos_noscale(c->h, r);
 	else {
 		RECT rect;
-		if (flags & FFUI_FPOS_CLIENT)
-			GetClientRect(c->h, &rect);
-		else
-			GetWindowRect(c->h, &rect);
+		GetWindowRect(c->h, &rect);
 		ffui_pos_fromrect(r, &rect);
 	}
 	if (flags & FFUI_FPOS_DPISCALE) {
@@ -281,42 +274,39 @@ void ffui_getpos2(void *ctl, ffui_pos *r, uint flags)
 	}
 }
 
-static HWND hwnd_create(enum FFUI_UID uid, const wchar_t *text, HWND parent, const ffui_pos *r, uint style, uint exstyle, void *param)
+static int ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent, uint style, uint exstyle)
 {
-	HINSTANCE inst = NULL;
-	if (uid == FFUI_UID_WINDOW)
-		inst = GetModuleHandleW(NULL);
-
-	HWND h = CreateWindowExW(exstyle, ctls[uid].sid, text, style
-		, _ffui_dpi_scale(r->x), _ffui_dpi_scale(r->y), _ffui_dpi_scale(r->cx), _ffui_dpi_scale(r->cy)
-		, parent, NULL, inst, param);
-	_ffui_log("%s: %s %p", __func__, ctls[uid].stype, h);
-	return h;
-}
-
-static int ctl_create_f(ffui_ctl *c, enum FFUI_UID uid, HWND parent, uint style, uint exstyle)
-{
-	ffui_pos r = {};
 	c->uid = uid;
-	if (0 == (c->h = hwnd_create(uid, L"", parent, &r
+	c->h = CreateWindowExW(ctls[uid].exstyle | exstyle, ctls[uid].sid, L""
 		, ctls[uid].style | WS_CHILD | style
-		, ctls[uid].exstyle | exstyle
-		, NULL)))
+		, 0, 0, 0, 0
+		, parent, NULL, NULL, NULL);
+	_ffui_log("%s: %s %p", __func__, ctls[uid].stype, c->h);
+	if (!c->h)
 		return 1;
-	ffui_setctl(c->h, c);
+	SetWindowLongPtrW(c->h, GWLP_USERDATA, (LONG_PTR)c);
 	return 0;
-}
-
-static int ctl_create(ffui_ctl *c, enum FFUI_UID uid, HWND parent)
-{
-	return ctl_create_f(c, uid, parent, 0, 0);
 }
 
 int _ffui_ctl_create_inherit_font(void *_c, enum FFUI_UID type, ffui_window *parent)
 {
 	ffui_ctl *c = _c;
-	if (0 != ctl_create_f(c, type, parent->h, 0, 0))
+	if (0 != ctl_create(c, type, parent->h, 0, 0))
 		return 1;
+
+	unsigned ctl = ~0U;
+	switch (type) {
+	case FFUI_UID_BUTTON:	ctl = DARK_THEME_BUTTON;  break;
+	case FFUI_UID_CHECKBOX:	ctl = DARK_THEME_CHECKBOX;  break;
+	case FFUI_UID_RADIO:	ctl = DARK_THEME_CHECKBOX;  break;
+	case FFUI_UID_EDITBOX:	ctl = DARK_THEME_EDIT;  break;
+	case FFUI_UID_TEXT:		ctl = DARK_THEME_EDIT;  break;
+	case FFUI_UID_TAB:		ctl = DARK_THEME_TAB;  break;
+	default:
+		break;
+	}
+	if (ctl != ~0U)
+		dark_theme_ctl(ffui_theme, ctl, c->h);
 
 	if (parent->font != NULL)
 		ffui_ctl_send(c, WM_SETFONT, parent->font, 0);
@@ -433,8 +423,9 @@ void ffui_paned_create(ffui_paned *pn, ffui_window *parent)
 
 int ffui_status_create(ffui_statusbar *c, ffui_window *parent)
 {
-	if (0 != ctl_create((void*)c, FFUI_UID_STATUSBAR, parent->h))
+	if (ctl_create((void*)c, FFUI_UID_STATUSBAR, parent->h, 0, 0))
 		return 1;
+	dark_theme_ctl(ffui_theme, DARK_THEME_STATUSBAR, c->h);
 	parent->stbar = c;
 	return 0;
 }
@@ -443,7 +434,7 @@ int ffui_status_create(ffui_statusbar *c, ffui_window *parent)
 
 int ffui_img_create(ffui_image *im, ffui_window *parent)
 {
-	if (0 != ctl_create((void*)im, FFUI_UID_IMAGE, parent->h))
+	if (ctl_create((void*)im, FFUI_UID_IMAGE, parent->h, 0, 0))
 		return 1;
 
 	return 0;
@@ -469,14 +460,14 @@ int ffui_edit_addtext(ffui_edit *c, const char *text, size_t len)
 
 int ffui_track_create(ffui_trackbar *t, ffui_window *parent)
 {
-	if (0 != ctl_create((ffui_ctl*)t, FFUI_UID_TRACKBAR, parent->h))
+	if (ctl_create((ffui_ctl*)t, FFUI_UID_TRACKBAR, parent->h, 0, 0))
 		return 1;
 	return 0;
 }
 
 int ffui_progress_create(ffui_ctl *c, ffui_window *parent)
 {
-	if (0 != ctl_create(c, FFUI_UID_PROGRESSBAR, parent->h))
+	if (ctl_create(c, FFUI_UID_PROGRESSBAR, parent->h, 0, 0))
 		return 1;
 	return 0;
 }
@@ -485,8 +476,10 @@ int ffui_progress_create(ffui_ctl *c, ffui_window *parent)
 int ffui_view_create(ffui_view *c, ffui_window *parent)
 {
 	uint s = (c->dispinfo_id != 0) ? LVS_OWNERDATA : 0;
-	if (0 != ctl_create_f((ffui_ctl*)c, FFUI_UID_LISTVIEW, parent->h, s, 0))
+	if (ctl_create((ffui_ctl*)c, FFUI_UID_LISTVIEW, parent->h, s, 0))
 		return 1;
+
+	dark_theme_ctl(ffui_theme, DARK_THEME_LISTVIEW, c->h);
 
 	SetWindowTheme(c->h, L"Explorer", NULL);
 
@@ -570,7 +563,7 @@ int ffui_view_edit_hittest(ffui_view *v, uint sub)
 
 int ffui_tree_create(ffui_tree *t, ffui_window *parent)
 {
-	if (0 != ctl_create_f((ffui_ctl*)t, FFUI_UID_TREEVIEW, parent->h, 0, 0))
+	if (ctl_create((ffui_ctl*)t, FFUI_UID_TREEVIEW, parent->h, 0, 0))
 		return 1;
 
 	SetWindowTheme(t->h, L"Explorer", NULL);
@@ -739,32 +732,41 @@ void paned_resize(ffui_paned *pn, ffui_window *wnd, RECT r)
 
 int ffui_wnd_initstyle()
 {
-	WNDCLASSEXW cls = {};
-	cls.cbSize = sizeof(cls);
-	cls.hInstance = GetModuleHandleW(NULL);
-	cls.lpfnWndProc = &wnd_proc;
-	cls.lpszClassName = ctls[FFUI_UID_WINDOW].sid;
-	cls.hIcon = LoadIcon(cls.hInstance, 0);
-	cls.hIconSm = cls.hIcon;
-	cls.hCursor = LoadCursor(NULL, IDC_ARROW);
-	cls.hbrBackground = (HBRUSH)COLOR_WINDOW;
-	if (RegisterClassExW(&cls)) {
+	WNDCLASSEXW wc = {
+		.cbSize = sizeof(wc),
+		.hInstance = GetModuleHandleW(NULL),
+		.lpfnWndProc = &wnd_proc,
+		.lpszClassName = L"FFGUI_WNDCLASS",
+		.hIcon = LoadIcon(wc.hInstance, 0),
+		.hIconSm = wc.hIcon,
+		.hCursor = LoadCursor(NULL, IDC_ARROW),
+		.hbrBackground = (HBRUSH)COLOR_WINDOW,
+	};
+	if (RegisterClassExW(&wc)) {
 		_ffui_flags |= _FFUI_WNDSTYLE;
 		return 0;
 	}
 	return -1;
 }
 
-int ffui_wnd_create(ffui_window *w)
+int ffui_wnd_create2(ffui_window *w, uint flags)
 {
-	ffui_pos r = { 0, 0, CW_USEDEFAULT, CW_USEDEFAULT };
 	w->uid = FFUI_UID_WINDOW;
 	if (w->on_action == NULL)
 		w->on_action = &wnd_onaction;
-	return 0 == hwnd_create(FFUI_UID_WINDOW, L"", NULL, &r
-		, ctls[FFUI_UID_WINDOW].style | WS_OVERLAPPEDWINDOW
-		, ctls[FFUI_UID_WINDOW].exstyle | 0
-		, w);
+
+	HWND h = CreateWindowExW(0, L"FFGUI_WNDCLASS", L""
+		, WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_OVERLAPPEDWINDOW
+		, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT
+		, NULL, NULL, GetModuleHandleW(NULL), w);
+	_ffui_log("%s: window %p %p", __func__, w, h);
+
+	dark_theme_ctl(ffui_theme, DARK_THEME_WINDOW_TITLE, h);
+	if (!(flags & 1))
+		dark_theme_ctl(ffui_theme, DARK_THEME_WINDOW, h);
+	dark_theme_ctl(ffui_theme, DARK_THEME_WINDOW_MAIN_MENU, h);
+
+	return !h;
 }
 
 int ffui_wnd_destroy(ffui_window *w)
@@ -781,6 +783,41 @@ int ffui_wnd_destroy(ffui_window *w)
 		DestroyWindow(w->ttip);
 
 	return ffui_ctl_destroy(w);
+}
+
+void ffui_wnd_setplacement(ffui_window *w, uint showcmd, const ffui_pos *pos)
+{
+	RECT r;
+	ffui_pos_torect(pos, &r);
+	_ffui_rect_scale(&r);
+
+	// Fit to screen
+	if (r.left < 0) {
+		r.right = ffmin(r.right - r.left, _ffui_screen_area.right);
+		r.left = 0;
+	}
+	if (r.right > _ffui_screen_area.right) {
+		r.left = ffmax(r.left - (r.right - _ffui_screen_area.right), 0);
+		r.right = _ffui_screen_area.right;
+	}
+	if (r.top < 0) {
+		r.bottom = ffmin(r.bottom - r.top, _ffui_screen_area.bottom);
+		r.top = 0;
+	}
+	if (r.bottom > _ffui_screen_area.bottom) {
+		r.top = ffmax(r.top - (r.bottom - _ffui_screen_area.bottom), 0);
+		r.bottom = _ffui_screen_area.bottom;
+	}
+	if (!(r.left < r.right
+		&& r.top < r.bottom))
+		return;
+
+	WINDOWPLACEMENT pl = {
+		.length = sizeof(WINDOWPLACEMENT),
+		.showCmd = showcmd,
+		.rcNormalPosition = r,
+	};
+	SetWindowPlacement(w->h, &pl);
 }
 
 void ffui_wnd_opacity(ffui_window *w, uint percent)
@@ -905,30 +942,6 @@ static void wnd_onaction(ffui_window *wnd, int id)
 	(void)id;
 }
 
-/* handle the creation of non-modal window. */
-static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l)
-{
-	ffui_window *wnd = (void*)ffui_getctl(h);
-
-	if (wnd != NULL) {
-		size_t code = 0;
-		if (0 != ffui_wndproc(wnd, &code, h, msg, w, l))
-			return code;
-
-	} else if (msg == WM_CREATE) {
-		const CREATESTRUCT *cs = (void*)l;
-		wnd = (void*)cs->lpCreateParams;
-		wnd->h = h;
-		ffui_setctl(h, wnd);
-
-		if (wnd->on_create != NULL)
-			wnd->on_create(wnd);
-	}
-
-	return DefWindowProc(h, msg, w, l);
-}
-
-
 /** Get handle of the window. */
 static HWND base_parent(HWND h)
 {
@@ -1040,40 +1053,36 @@ static void wnd_border_stick(uint stick, WINDOWPOS *ws)
 		ws->y = r.bottom - ws->cy;
 }
 
-static void wnd_cmd(ffui_window *wnd, uint w, HWND h)
+static uint wnd_wm_command(ffui_window *wnd, uint w, HWND h)
 {
-	uint id = 0, msg = HIWORD(w);
+	uint msg = HIWORD(w);
 	union ffui_anyctl ctl;
 
 	if (NULL == (ctl.ctl = ffui_getctl(h)))
-		return;
+		return 0;
 
 	switch ((int)ctl.ctl->uid) {
 
 	case FFUI_UID_LABEL:
 		switch (msg) {
 		case STN_CLICKED:
-			id = ctl.lbl->click_id;
-			break;
+			return ctl.lbl->click_id;
 		case STN_DBLCLK:
-			id = ctl.lbl->click2_id;
-			break;
+			return ctl.lbl->click2_id;
 		}
 		break;
 
 	case FFUI_UID_BUTTON:
 		switch (msg) {
 		case BN_CLICKED:
-			id = ctl.btn->action_id;
-			break;
+			return ctl.btn->action_id;
 		}
 		break;
 
 	case FFUI_UID_CHECKBOX:
 		switch (msg) {
 		case BN_CLICKED:
-			id = ctl.cb->action_id;
-			break;
+			return ctl.cb->action_id;
 		}
 		break;
 
@@ -1081,13 +1090,13 @@ static void wnd_cmd(ffui_window *wnd, uint w, HWND h)
 	case FFUI_UID_TEXT:
 		switch (msg) {
 		case EN_CHANGE:
-			id = ctl.edit->change_id; break;
+			return ctl.edit->change_id;
 
 		case EN_SETFOCUS:
-			id = ctl.edit->focus_id; break;
+			return ctl.edit->focus_id;
 
 		case EN_KILLFOCUS:
-			id = ctl.edit->focus_lose_id; break;
+			return ctl.edit->focus_lose_id;
 		}
 		break;
 
@@ -1095,64 +1104,50 @@ static void wnd_cmd(ffui_window *wnd, uint w, HWND h)
 	case FFUI_UID_COMBOBOX_LIST:
 		switch (msg) {
 		case CBN_SELCHANGE:
-			id = ctl.combx->change_id;
-			break;
+			return ctl.combx->change_id;
 
 		case CBN_DROPDOWN:
-			id = ctl.combx->popup_id;
-			break;
+			return ctl.combx->popup_id;
 
 		case CBN_CLOSEUP:
-			id = ctl.combx->closeup_id;
-			break;
+			return ctl.combx->closeup_id;
 
 		case CBN_EDITCHANGE:
-			id = ctl.combx->edit_change_id;
-			break;
+			return ctl.combx->edit_change_id;
 
 		case CBN_EDITUPDATE:
-			id = ctl.combx->edit_update_id;
-			break;
+			return ctl.combx->edit_update_id;
 		}
 		break;
 	}
 
-	if (id != 0)
-		wnd->on_action(wnd, id);
+	return 0;
 }
 
-static int _ffui_tab_wm_notify(ffui_tab *t, ffui_window *wnd, NMHDR *nh, ffsize *code)
+static uint _ffui_tab_wm_notify(ffui_tab *t, ffui_window *wnd, NMHDR *nh, ffsize *code)
 {
-	uint action_id = 0;
 	switch (nh->code) {
 	case TCN_SELCHANGING:
-		_ffui_log("TCN_SELCHANGING", 0);
 		if (t->changing_sel_id != 0) {
 			wnd->on_action(wnd, t->changing_sel_id);
 			*code = t->changing_sel_keep;
 			t->changing_sel_keep = 0;
-			return 1;
+			return ~0U;
 		}
 		break;
 
 	case TCN_SELCHANGE:
-		action_id = t->chsel_id;
-		break;
+		return t->chsel_id;
 	}
 
-	if (action_id != 0)
-		wnd->on_action(wnd, action_id);
 	return 0;
 }
 
-static int _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsize *code)
+static uint _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsize *code)
 {
-	uint action_id = 0;
-
 	switch (nh->code) {
 	case LVN_ITEMACTIVATE:
-		action_id = v->dblclick_id;
-		break;
+		return v->dblclick_id;
 
 	case LVN_ITEMCHANGED: {
 		NM_LISTVIEW *it = (NM_LISTVIEW*)nh;
@@ -1160,16 +1155,15 @@ static int _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsiz
 			, it->iItem, it->iSubItem, it->uOldState, it->uNewState);
 		v->idx = it->iItem;
 		if (0x3000 == ((it->uOldState & LVIS_STATEIMAGEMASK) ^ (it->uNewState & LVIS_STATEIMAGEMASK)))
-			action_id = v->check_id;
+			return v->check_id;
 		else if ((it->uOldState & LVIS_SELECTED) != (it->uNewState & LVIS_SELECTED))
-			action_id = v->chsel_id;
+			return v->chsel_id;
 		break;
 	}
 
 	case LVN_COLUMNCLICK:
 		v->col = ((NM_LISTVIEW*)nh)->iSubItem;
-		action_id = v->colclick_id;
-		break;
+		return v->colclick_id;
 
 	case LVN_ENDLABELEDIT: {
 		const LVITEMW *it = &((NMLVDISPINFOW*)nh)->item;
@@ -1193,7 +1187,7 @@ static int _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsiz
 				di->item.pszText[0] = '\0';
 			wnd->on_action(wnd, v->dispinfo_id);
 			*code = 1;
-			return 1;
+			return ~0U;
 		}
 		break;
 
@@ -1204,14 +1198,12 @@ static int _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsiz
 				, (int)kd->wVKey, (int)kd->flags);
 			if (kd->wVKey == VK_SPACE) {
 				v->idx = ffui_view_focused(v);
-				action_id = v->check_id;
+				return v->check_id;
 			}
 		}
 		break;
 
 	case NM_CLICK:
-		action_id = v->lclick_id;
-
 		if (v->dispinfo_id != 0 && v->check_id != 0) {
 			ffui_point pt;
 			ffui_cur_pos(&pt);
@@ -1221,10 +1213,10 @@ static int _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsiz
 				, i, f);
 			if (i != -1) {
 				v->idx = i;
-				action_id = v->check_id;
+				return v->check_id;
 			}
 		}
-		break;
+		return v->lclick_id;
 
 	case NM_RCLICK:
 		if (v->pmenu != NULL) {
@@ -1236,14 +1228,11 @@ static int _ffui_view_wm_notify(ffui_view *v, ffui_window *wnd, NMHDR *nh, ffsiz
 		break;
 	}
 
-	if (action_id != 0)
-		wnd->on_action(wnd, action_id);
 	return 0;
 }
 
 static int wnd_nfy(ffui_window *wnd, NMHDR *n, size_t *code)
 {
-	uint id = 0;
 	union ffui_anyctl ctl;
 
 	_ffui_log("WM_NOTIFY:\th: %8xL,  code: %8xL"
@@ -1255,6 +1244,7 @@ static int wnd_nfy(ffui_window *wnd, NMHDR *n, size_t *code)
 	switch ((int)ctl.ctl->uid) {
 	case FFUI_UID_LISTVIEW:
 		return _ffui_view_wm_notify(ctl.view, wnd, n, code);
+
 	case FFUI_UID_TAB:
 		return _ffui_tab_wm_notify(ctl.tab, wnd, n, code);
 
@@ -1262,14 +1252,11 @@ static int wnd_nfy(ffui_window *wnd, NMHDR *n, size_t *code)
 		switch (n->code) {
 		case TVN_SELCHANGED:
 			_ffui_log("TVN_SELCHANGED", 0);
-			id = ctl.view->chsel_id;
-			break;
+			return ctl.view->chsel_id;
 		}
 		break;
 	}
 
-	if (id != 0)
-		wnd->on_action(wnd, id);
 	return 0;
 }
 
@@ -1326,53 +1313,88 @@ static void _ffui_wnd_scroll(ffui_window *wnd, uint w)
 		return;
 	}
 
-	if (n < 0 || n == y)
+	if (n < 0)
+		n = 0;
+	if (n == y)
 		return;
 
 	si.fMask = SIF_POS;
 	si.nPos = n;
 	SetScrollInfo(wnd->h, SB_VERT, &si, 1);
 	GetScrollInfo(wnd->h, SB_VERT, &si);
-	if (n > si.nPos)
-		return;
+	n = ffmin(n, si.nPos);
 
 	ScrollWindow(wnd->h, 0, y - n, NULL, NULL);
 	UpdateWindow(wnd->h);
 }
 
+void ffui_wnd_size_min(ffui_window *w, uint width_min, uint height_min)
+{
+	w->min_height = height_min;
+	int cx = _ffui_dpi_scale(width_min)
+		, cy = _ffui_dpi_scale(height_min);
+	RECT rw, rc;
+	GetClientRect(w->h, &rc);
+	if (rc.right < cx
+		|| rc.bottom < cy) {
+		GetWindowRect(w->h, &rw);
+		if (rc.right < cx)
+			rw.right += cx - rc.right;
+		if (rc.bottom < cy)
+			rw.bottom += cy - rc.bottom;
+		SetWindowPos(w->h, HWND_TOP, rw.left, rw.top, rw.right - rw.left, rw.bottom - rw.top, SWP_NOACTIVATE);
+	}
+}
+
 static void _ffui_wnd_size(ffui_window *wnd, RECT rect)
 {
-	if (rect.bottom < (int)wnd->min_height) {
-		// Add vertical scroll bar when window size becomes less than it should be
+	unsigned min_height = _ffui_dpi_scale(wnd->min_height);
+	if (!(rect.bottom < (int)min_height || wnd->vscroll))
+		return;
+
+	SCROLLINFO si = {
+		.cbSize = sizeof(SCROLLINFO),
+		.fMask = SIF_POS,
+	};
+	GetScrollInfo(wnd->h, SB_VERT, &si);
+	int y = si.nPos;
+
+	if (rect.bottom < (int)min_height) {
+		// Show the vertical scroll bar when the window size becomes smaller than it should be
+
+		si.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
+		si.nMax = min_height - rect.bottom + _ffui_dpi_scale(100);
+		si.nPage = _ffui_dpi_scale(100);
+		si.nPos = 0;
+		SetScrollInfo(wnd->h, SB_VERT, &si, 1);
+		if (y)
+			ScrollWindow(wnd->h, 0, y, NULL, NULL); // Note: scrolling the window upwards to y=0 for easier math
+
 		if (wnd->vscroll)
 			return;
 		wnd->vscroll = 1;
-		_ffui_style_set(wnd, WS_VSCROLL);
 
-		SCROLLINFO si = {
-			.cbSize = sizeof(SCROLLINFO),
-			.fMask = SIF_RANGE | SIF_PAGE,
-			.nMax = wnd->min_height,
-			.nPage = 10,
-		};
-		SetScrollInfo(wnd->h, SB_VERT, &si, 1);
-
-	} else if (wnd->vscroll) {
+	} else {
 		// Reset scroll bar position and window scroll position; hide scroll bar
-		wnd->vscroll = 0;
 
-		SCROLLINFO si = {
-			.cbSize = sizeof(SCROLLINFO),
-			.fMask = SIF_POS,
-		};
+		si.fMask = SIF_POS;
 		GetScrollInfo(wnd->h, SB_VERT, &si);
 		int y = si.nPos;
+
 		si.nPos = 0;
 		SetScrollInfo(wnd->h, SB_VERT, &si, 1);
-
 		ScrollWindow(wnd->h, 0, y, NULL, NULL);
-		_ffui_style_clear(wnd, WS_VSCROLL);
+
+		wnd->vscroll = 0;
 	}
+
+	// Show/hide scroll bar
+	unsigned style = GetWindowLongW(wnd->h, GWL_STYLE);
+	style = (wnd->vscroll) ? (style | WS_VSCROLL) : (style & ~WS_VSCROLL);
+	SetWindowLongW(wnd->h, GWL_STYLE, style);
+
+	// Redraw
+	SetWindowPos(wnd->h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
 /*
@@ -1381,30 +1403,56 @@ exit
 	* when user signs out: WM_ENDSESSION
 */
 
-int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, size_t l)
+static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l)
 {
+	ffui_window *wnd = (void*)GetWindowLongPtrW(h, GWLP_USERDATA);
 	union ffui_anyctl c;
+	uint id;
+	size_t code;
+
+	if (!wnd) {
+		if (msg == WM_CREATE) {
+			wnd = (void*)((const CREATESTRUCT*)l)->lpCreateParams;
+			wnd->h = h;
+			SetWindowLongPtrW(h, GWLP_USERDATA, (LONG_PTR)wnd);
+
+			if (wnd->on_create)
+				wnd->on_create(wnd);
+		}
+		goto end;
+	}
 
 	switch (msg) {
 
 	case WM_COMMAND:
 		print("WM_COMMAND", h, w, l);
-
 		if (l == 0) { //menu
 			/* HIWORD(w): 0 - msg sent by menu. 1 - msg sent by hot key */
-			wnd->on_action(wnd, LOWORD(w));
-			break;
+			id = LOWORD(w);
+			if (id == IDCANCEL && wnd->popup) {
+				// Auto-close the popup window on Escape key press
+				wnd->on_action(wnd, wnd->onclose_id);
+				if (wnd->hide_on_close) {
+					ShowWindow(h, SW_HIDE);
+					break;
+				}
+				if (!wnd->manual_close)
+					SendMessageW(h, WM_CLOSE, 0, 0);
+				break;
+			}
+		} else {
+			id = wnd_wm_command(wnd, (int)w, (HWND)l);
 		}
-
-		wnd_cmd(wnd, (int)w, (HWND)l);
+		if (id)
+			wnd->on_action(wnd, id);
 		break;
 
 	case WM_NOTIFY:
-		*code = 0;
-		if (0 != wnd_nfy(wnd, (NMHDR*)l, code))
-			return *code;
-		if (*code != 0)
-			return 1;
+		id = wnd_nfy(wnd, (NMHDR*)l, &code);
+		if (id == ~0U)
+			return code;
+		else if (id)
+			wnd->on_action(wnd, id);
 		break;
 
 	case WM_CTLCOLORSTATIC: {
@@ -1415,7 +1463,7 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 		HBRUSH br;
 		if (c.ctl->uid == FFUI_UID_LABEL && c.lbl->color) {
 			color = c.lbl->color;
-			br = (ffui_theme) ? ffui_theme->wbr : GetSysColorBrush(COLOR_BTNFACE);
+			br = (ffui_theme) ? ffui_theme->window_bg_br : GetSysColorBrush(COLOR_BTNFACE);
 		} else {
 			goto apply_theme;
 		}
@@ -1423,8 +1471,7 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 		HDC hdc = (HDC)w;
 		SetTextColor(hdc, color);
 		SetBkMode(hdc, TRANSPARENT);
-		*code = (LRESULT)br;
-		return 1;
+		return (LRESULT)br;
 	}
 
 	case WM_CTLCOLOREDIT:
@@ -1432,9 +1479,9 @@ int ffui_wndproc(ffui_window *wnd, size_t *code, HWND h, uint msg, size_t w, siz
 	case WM_ERASEBKGND:
 apply_theme:
 		if (ffui_theme) {
-			*code = dark_theme_wnd_proc(ffui_theme, h, msg, w, l);
-			if ((ssize_t)*code != -1)
-				return 1;
+			code = dark_theme_wnd_proc(ffui_theme, h, msg, w, l);
+			if ((ssize_t)code != -1)
+				return code;
 		}
 		break;
 
@@ -1461,7 +1508,7 @@ apply_theme:
 			wnd->on_action(wnd, wnd->onclose_id);
 
 			if (wnd->hide_on_close) {
-				ffui_show(wnd, 0);
+				ShowWindow(h, SW_HIDE);
 				return 1;
 			}
 			return wnd->manual_close;
@@ -1474,7 +1521,8 @@ apply_theme:
 			break;
 
 		case SC_MAXIMIZE:
-			wnd->on_action(wnd, wnd->onmaximize_id);
+			if (wnd->onmaximize_id)
+				wnd->on_action(wnd, wnd->onmaximize_id);
 			break;
 		}
 		break;
@@ -1498,8 +1546,7 @@ apply_theme:
 			if (wnd->focused != NULL) {
 				SetFocus(wnd->focused);
 				wnd->focused = NULL;
-				*code = 0;
-				return 1;
+				return 0;
 			}
 			break;
 		}
@@ -1530,7 +1577,7 @@ apply_theme:
 		}
 
 		if (wnd->stbar != NULL)
-			ffui_send(wnd->stbar->h, WM_SIZE, 0, 0);
+			SendMessageW(wnd->stbar->h, WM_SIZE, 0, 0);
 		break;
 
 	case WM_WINDOWPOSCHANGING:
@@ -1585,5 +1632,6 @@ apply_theme:
 	}
 	}
 
-	return 0;
+end:
+	return DefWindowProc(h, msg, w, l);
 }

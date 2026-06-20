@@ -859,9 +859,6 @@ static int new_checkbox(ffui_loader *g, ffstr name)
 
 	if (0 != ffui_checkbox_create(g->actl.ctl, g->wnd))
 		return FFUI_ENOMEM;
-
-	dark_theme_ctl(g->dark_theme, DARK_THEME_CHECKBOX, g->actl.ctl->h);
-
 	state_reset2(g);
 	g->r.cx = 400;
 	add_ctx(g, chbox_args);
@@ -1252,8 +1249,6 @@ static int new_listview(ffui_loader *g, ffstr name)
 	if (0 != ffui_view_create(g->actl.view, g->wnd))
 		return FFUI_ENOMEM;
 
-	dark_theme_ctl(g->dark_theme, DARK_THEME_LISTVIEW, g->actl.view->h);
-
 	state_reset(g);
 	g->r.cx = 200;
 	g->r.cy = 200;
@@ -1501,14 +1496,7 @@ static int wnd_done(ffui_loader *g)
 			return FFUI_ESYS;
 	}
 
-	g->wnd->min_height = g->edge_bottom;
-	if ((uint)g->wnd_pos.cx < g->edge_right
-		|| (uint)g->wnd_pos.cy - 40 < g->edge_bottom) {
-		// Increase the window's width+height so that all controls are fully visible
-		g->wnd_pos.cx = g->edge_right + 2;
-		g->wnd_pos.cy = 40 + g->edge_bottom + 2;
-		ffui_setposrect(g->wnd, &g->wnd_pos, 0);
-	}
+	ffui_wnd_size_min(g->wnd, g->edge_right, g->edge_bottom);
 
 	if (g->wnd_visible) {
 		g->wnd_visible = 0;
@@ -1566,13 +1554,8 @@ static int new_wnd(ffui_loader *g, ffstr name)
 	if (!(g->wnd_name = ffsz_dupn(name.ptr, name.len)))
 		return FFUI_ENOMEM;
 	g->actl.ctl = (ffui_ctl*)wnd;
-	if (0 != ffui_wnd_create(wnd))
+	if (0 != ffui_wnd_create2(wnd, (g->dark_theme_wnd_manual) ? 1 : 0))
 		return FFUI_ENOMEM;
-
-	dark_theme_ctl(g->dark_theme, DARK_THEME_WINDOW_TITLE, g->wnd->h);
-	if (!g->dark_theme_wnd_manual)
-		dark_theme_ctl(g->dark_theme, DARK_THEME_WINDOW, g->wnd->h);
-	dark_theme_ctl(g->dark_theme, DARK_THEME_WINDOW_MAIN_MENU, g->wnd->h);
 
 	add_ctx(g, wnd_args);
 	return 0;

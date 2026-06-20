@@ -4,28 +4,29 @@
 #pragma once
 #include <windows.h>
 
-typedef int (WINAPI *ShouldAppsUseDarkMode_t)();
-typedef void (WINAPI *AllowDarkModeForWindow_t)(HWND, int);
-typedef void (WINAPI *SetPreferredAppMode_t)(int);
-typedef void (WINAPI *DwmSetWindowAttribute_t)(void*, DWORD, void*, DWORD);
-
 struct dark_theme {
 	// Colors:
 	COLORREF background		// Window background
 		, text				// Text
+		, text_alt			// Text (alternative)
 		, menu_bg_light		// Menu background (highlight)
+		, tab_bg_light		// Tab background (highlight)
+		, tab_bg_sel		// Tab background (selected)
+		, tab_frame_sel		// Tab frame (selected)
 		, listview_header	// ListView header text
 		, listview_bg		// ListView background
 		, listview_text;	// ListView item text
 
-	HBRUSH wbr
-		, mmlbr;
+	HBRUSH window_bg_br
+		, menu_light_br
+		, tab_light_br
+		, tab_sel_br
+		, tab_frame_br;
 	HANDLE thmenu;
 
-	ShouldAppsUseDarkMode_t		_ShouldAppsUseDarkMode;
-	AllowDarkModeForWindow_t	_AllowDarkModeForWindow;
-	SetPreferredAppMode_t		_SetPreferredAppMode;
-	DwmSetWindowAttribute_t		_DwmSetWindowAttribute;
+	void* _AllowDarkModeForWindow;
+	void* _SetPreferredAppMode;
+	void* _DwmSetWindowAttribute;
 };
 
 enum DARK_THEME {
@@ -50,11 +51,23 @@ enum DARK_THEME_FLAGS {
 	/** Apply dark background for the window's main menu */
 	DARK_THEME_WINDOW_MAIN_MENU,
 
-	/** Set dark theme for a CheckBox control */
+	/** Apply "DarkMode_Explorer" theme for the push button */
+	DARK_THEME_BUTTON,
+
+	/** Set dark theme for a CheckBox/RadioButton controls */
 	DARK_THEME_CHECKBOX,
+
+	/** Apply "DarkMode_Explorer" theme for the edit control */
+	DARK_THEME_EDIT,
+
+	/** Set background/text colors for a Tab control */
+	DARK_THEME_TAB,
 
 	/** Set dark theme for a ListView control */
 	DARK_THEME_LISTVIEW,
+
+	/** Set dark theme for a StatusBar control (subclass) */
+	DARK_THEME_STATUSBAR,
 };
 
 #ifdef __cplusplus
@@ -83,9 +96,15 @@ LRESULT WINAPI dark_theme_wnd_proc(struct dark_theme *t, HWND hWnd, UINT uMsg, W
 }
 #endif
 
-/** Set text and background colors */
-static inline void dark_theme_colors(struct dark_theme *t, unsigned text, unsigned background) {
-	t->background = t->listview_bg = __builtin_bswap32(background << 8); // "BGR0" -> "0BGR" -> "RGB0"
-	t->menu_bg_light = __builtin_bswap32((background + 0x222222) << 8);
-	t->text = t->listview_header = t->listview_text = __builtin_bswap32(text << 8);
+/** Convert RGB to COLORREF */
+static inline unsigned dark_theme_rgb2cr(unsigned rgb) {
+	return __builtin_bswap32(rgb << 8); // BGR0 -> 0BGR -> RGB0
+}
+
+static inline void dark_theme_colors(struct dark_theme *t, unsigned background, unsigned text) {
+	t->background = t->listview_bg = dark_theme_rgb2cr(background);
+	t->tab_bg_sel = t->tab_frame_sel = dark_theme_rgb2cr(background + 0x111111);
+	t->menu_bg_light = t->tab_bg_light = dark_theme_rgb2cr(background + 0x111111);
+	t->text = t->listview_text = dark_theme_rgb2cr(text);
+	t->text_alt = t->listview_header = dark_theme_rgb2cr(text - 0x111111);
 }

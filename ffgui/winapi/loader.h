@@ -59,7 +59,7 @@ struct ffui_loader {
 	/** Module handle to load resource objects from */
 	HMODULE hmod_resource;
 
-	struct dark_theme *dark_theme;
+	uint dark_theme :1;
 	uint dark_theme_wnd_manual :1;
 
 	ffvec paned_array; // ffui_paned*[].  User must free the controls and vector manually.

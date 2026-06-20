@@ -39,8 +39,23 @@ FF_EXTERN uint _ffui_dpi;
 FF_EXTERN RECT _ffui_screen_area;
 FF_EXTERN struct dark_theme *ffui_theme;
 
-#define _ffui_dpi_descale(x)  ((x) * 96 / _ffui_dpi)
-#define _ffui_dpi_scale(x)  ((x) * _ffui_dpi / 96)
+#define _ffui_dpi_scale(x)  (((x) * _ffui_dpi + 96/2) / 96)
+#define _ffui_dpi_unscale(x)  (((x) * 96 + _ffui_dpi/2) / _ffui_dpi)
+#define _ffui_dpi_descale(x)  (((x) * 96 + _ffui_dpi/2) / _ffui_dpi)
+
+static inline void _ffui_rect_scale(RECT *r) {
+	r->left = _ffui_dpi_scale(r->left);
+	r->top = _ffui_dpi_scale(r->top);
+	r->right = _ffui_dpi_scale(r->right);
+	r->bottom = _ffui_dpi_scale(r->bottom);
+}
+
+static inline void _ffui_rect_unscale(RECT *r) {
+	r->left = _ffui_dpi_unscale(r->left);
+	r->top = _ffui_dpi_unscale(r->top);
+	r->right = _ffui_dpi_unscale(r->right);
+	r->bottom = _ffui_dpi_unscale(r->bottom);
+}
 
 
 // POINT
@@ -234,7 +249,6 @@ typedef struct ffui_ctl {
 } ffui_ctl;
 
 #define ffui_getctl(h)  ((void*)GetWindowLongPtrW(h, GWLP_USERDATA))
-#define ffui_setctl(h, udata)  SetWindowLongPtrW(h, GWLP_USERDATA, (LONG_PTR)(udata))
 
 #define ffui_send(h, msg, w, l)  SendMessageW(h, msg, (size_t)(w), (size_t)(l))
 #define ffui_post(h, msg, w, l)  PostMessageW(h, msg, (size_t)(w), (size_t)(l))
@@ -245,7 +259,6 @@ FF_EXTERN int _ffui_ctl_create_inherit_font(void *c, enum FFUI_UID type, ffui_wi
 
 enum FFUI_FPOS {
 	FFUI_FPOS_DPISCALE = 1,
-	FFUI_FPOS_CLIENT = 2,
 	FFUI_FPOS_REL = 4,
 };
 
