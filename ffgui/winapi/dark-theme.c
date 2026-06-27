@@ -1,7 +1,4 @@
-/**
-Not implemented:
-* combo box
-
+/** Win32API GUI dark theme
 2026, Simon Zolin */
 
 #define UNICODE
@@ -156,7 +153,7 @@ static LRESULT WINAPI dkth_mmenu_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			.dwFlags = DTT_TEXTCOLOR,
 			.crText = t->text_alt,
 		};
-		DrawThemeTextEx(t->thmenu, dmi->m.hdc, MENU_BARITEM, MBI_NORMAL, buf, mii.cch, flags, &dmi->dis.rcItem, &opts);
+		DrawThemeTextEx(t->menu_theme, dmi->m.hdc, MENU_BARITEM, MBI_NORMAL, buf, mii.cch, flags, &dmi->dis.rcItem, &opts);
 		return 1;
 	}
 
@@ -331,6 +328,18 @@ static LRESULT WINAPI dkth_stbar_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			DrawTextW(hdc, buf, len, &r, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 		}
 
+		if ((GetWindowLongPtr(hWnd, GWL_STYLE) & SBARS_SIZEGRIP)
+			&& t->stbar_theme) {
+
+			RECT rcl;
+			GetClientRect(hWnd, &rcl);
+			SIZE gripper_size;
+			GetThemePartSize(t->stbar_theme, hdc, SP_GRIPPER, 0, &rcl, TS_DRAW, &gripper_size);
+			rcl.left = rcl.right - gripper_size.cx;
+			rcl.top = rcl.bottom - gripper_size.cy;
+			DrawThemeBackground(t->stbar_theme, hdc, SP_GRIPPER, 0, &rcl, NULL);
+		}
+
 		EndPaint(hWnd, &ps);
 		return 0;
 	}
@@ -381,8 +390,8 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 		return 0;
 
 	case DARK_THEME_WINDOW_MAIN_MENU:
-		if (!t->thmenu)
-			t->thmenu = OpenThemeData(h, L"Menu");
+		if (!t->menu_theme)
+			t->menu_theme = OpenThemeData(h, L"Menu");
 		if (!t->menu_light_br)
 			t->menu_light_br = CreateSolidBrush(t->menu_bg_light);
 		dkth_subclass(h, dkth_mmenu_proc, t);
@@ -394,8 +403,17 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 		return 0;
 
 	case DARK_THEME_CHECKBOX:
+	case DARK_THEME_RADIOBUTTON:
 		SetWindowTheme(h, L"", L"");
 		return 0;
+
+	case DARK_THEME_COMBOBOX:
+		if (t->_AllowDarkModeForWindow) {
+			((AllowDarkModeForWindow_t)t->_AllowDarkModeForWindow)(h, 1);
+			SetWindowTheme(h, L"CFD", NULL);
+			return 0;
+		}
+		break;
 
 	case DARK_THEME_TAB:
 		if (!t->tab_light_br)
@@ -410,7 +428,18 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 	case DARK_THEME_LISTVIEW:
 		return dkth_listview(t, h);
 
+	case DARK_THEME_TREEVIEW:
+		if (t->_AllowDarkModeForWindow) {
+			((AllowDarkModeForWindow_t)t->_AllowDarkModeForWindow)(h, 1);
+			TreeView_SetTextColor(h, t->listview_text);
+			TreeView_SetBkColor(h, t->listview_bg);
+			SetWindowTheme(h, L"DarkMode_Explorer", NULL);
+		}
+		return 0;
+
 	case DARK_THEME_STATUSBAR:
+		if (!t->stbar_theme)
+			t->stbar_theme = OpenThemeData(h, L"STATUS");
 		dkth_subclass(h, dkth_stbar_proc, t);
 		return 0;
 	}

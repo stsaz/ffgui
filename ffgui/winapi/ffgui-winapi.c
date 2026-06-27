@@ -298,9 +298,10 @@ int _ffui_ctl_create_inherit_font(void *_c, enum FFUI_UID type, ffui_window *par
 	switch (type) {
 	case FFUI_UID_BUTTON:	ctl = DARK_THEME_BUTTON;  break;
 	case FFUI_UID_CHECKBOX:	ctl = DARK_THEME_CHECKBOX;  break;
-	case FFUI_UID_RADIO:	ctl = DARK_THEME_CHECKBOX;  break;
+	case FFUI_UID_RADIO:	ctl = DARK_THEME_RADIOBUTTON;  break;
 	case FFUI_UID_EDITBOX:	ctl = DARK_THEME_EDIT;  break;
 	case FFUI_UID_TEXT:		ctl = DARK_THEME_EDIT;  break;
+	case FFUI_UID_COMBOBOX_LIST: ctl = DARK_THEME_COMBOBOX;  break;
 	case FFUI_UID_TAB:		ctl = DARK_THEME_TAB;  break;
 	default:
 		break;
@@ -567,6 +568,8 @@ int ffui_tree_create(ffui_tree *t, ffui_window *parent)
 		return 1;
 
 	SetWindowTheme(t->h, L"Explorer", NULL);
+
+	dark_theme_ctl(ffui_theme, DARK_THEME_TREEVIEW, t->h);
 
 #if FF_WIN >= 0x0600
 	uint n = TVS_EX_DOUBLEBUFFER | TVS_EX_FADEINOUTEXPANDOS;

@@ -22,7 +22,8 @@ struct dark_theme {
 		, tab_light_br
 		, tab_sel_br
 		, tab_frame_br;
-	HANDLE thmenu;
+	HANDLE menu_theme
+		, stbar_theme;
 
 	void* _AllowDarkModeForWindow;
 	void* _SetPreferredAppMode;
@@ -54,8 +55,14 @@ enum DARK_THEME_FLAGS {
 	/** Apply "DarkMode_Explorer" theme for the push button */
 	DARK_THEME_BUTTON,
 
-	/** Set dark theme for a CheckBox/RadioButton controls */
+	/** Set dark theme for a CheckBox control */
 	DARK_THEME_CHECKBOX,
+
+	/** Set dark theme for a RadioButton control */
+	DARK_THEME_RADIOBUTTON,
+
+	/** Set dark theme for a ComboBox control */
+	DARK_THEME_COMBOBOX,
 
 	/** Apply "DarkMode_Explorer" theme for the edit control */
 	DARK_THEME_EDIT,
@@ -65,6 +72,9 @@ enum DARK_THEME_FLAGS {
 
 	/** Set dark theme for a ListView control */
 	DARK_THEME_LISTVIEW,
+
+	/** Set dark theme for a TreeView control */
+	DARK_THEME_TREEVIEW,
 
 	/** Set dark theme for a StatusBar control (subclass) */
 	DARK_THEME_STATUSBAR,
