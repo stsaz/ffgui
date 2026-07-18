@@ -961,6 +961,7 @@ static int new_combobox(ffui_loader *g, ffstr name)
 	if (!(g->actl.ctl = ldr_getctl(g, name)))
 		return FFUI_EINVAL;
 
+	ctl_create_prepare(g);
 	state_reset2(g);
 	g->resize_flags |= F_RESIZE_CX;
 	add_ctx(g, combx_args);
