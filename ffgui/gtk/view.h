@@ -29,6 +29,7 @@ struct ffui_view {
 	ushort dispinfo_id;
 	ushort edit_id;
 	ffui_menu *popup_menu;
+	uint draw_end_notify :1; // Call on_action(dispinfo_id) with dispinfo_item=NULL after drawing procedure has been finished
 
 	union {
 	GtkTreePath *path; // dblclick_id

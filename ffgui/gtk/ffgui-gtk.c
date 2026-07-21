@@ -372,6 +372,11 @@ void ffui_view_setdata(ffui_view *v, uint first, int delta)
 		_ffui_log("removed idx:%u", i);
 		i--;
 	}
+
+	if (v->draw_end_notify) {
+		v->dispinfo_item = NULL;
+		v->wnd->on_action(v->wnd, v->dispinfo_id);
+	}
 }
 
 
