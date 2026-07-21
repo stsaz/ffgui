@@ -309,7 +309,8 @@ static inline void ffui_view_scroll_setvert(ffui_view *v, uint val) {
 static inline void ffui_view_popupmenu(ffui_view *v, ffui_menu *m) {
 	v->popup_menu = m;
 	if (m != NULL) {
-		g_object_set_data(G_OBJECT(m->h), "ffdata", v->wnd);
+		m->wnd = v->wnd;
+		g_object_set_data(G_OBJECT(m->h), "ffdata", m);
 		gtk_widget_show_all(m->h);
 	}
 }

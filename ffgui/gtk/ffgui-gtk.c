@@ -34,17 +34,29 @@ void ffui_run()
 #define sig_disable(h, func, udata) \
 	g_signal_handlers_disconnect_matched(h, G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA, 0, 0, 0, G_CALLBACK(func), udata)
 
+static inline GtkWidget* _ffui_menu_root(GtkWidget *mi)
+{
+	for (;;) {
+		GtkWidget *menu = gtk_widget_get_parent(mi);
+		if (!menu)
+			return NULL;
+		if (GTK_IS_MENU_BAR(menu))
+			return menu;
+		if (!(mi = gtk_menu_get_attach_widget(GTK_MENU(menu))))
+			return menu;
+	}
+}
 
+// menu_bar -> menu_item -> menu -> menu_item
 void _ffui_menu_activate(GtkWidget *mi, gpointer udata)
 {
-	GtkWidget *parent_menu = mi;
-	ffui_window *wnd = NULL;
-	while (wnd == NULL) {
-		parent_menu = gtk_widget_get_parent(parent_menu);
-		wnd = g_object_get_data(G_OBJECT(parent_menu), "ffdata");
-	}
+	GtkWidget *p = _ffui_menu_root(mi);
+	ffui_menu *m = (p) ? g_object_get_data(G_OBJECT(p), "ffdata") : NULL;
+	if (!(m && m->wnd))
+		return;
+
 	uint id = (ffsize)udata;
-	wnd->on_action(wnd, id);
+	m->wnd->on_action(m->wnd, id);
 }
 
 void _ffui_button_clicked(GtkWidget *widget, gpointer udata)

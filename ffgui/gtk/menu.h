@@ -15,6 +15,7 @@ typedef struct ffui_menu {
 
 static inline int ffui_menu_createmain(ffui_menu *m) {
 	m->h = gtk_menu_bar_new();
+	g_object_set_data(G_OBJECT(m->h), "ffdata", m);
 	return (m->h == NULL);
 }
 
@@ -32,9 +33,8 @@ static inline void ffui_menu_destroy(ffui_menu *m) {
 #define ffui_menu_check_new(text)  gtk_check_menu_item_new_with_mnemonic(text)
 #define ffui_menu_separator_new()  gtk_separator_menu_item_new()
 
-static inline void ffui_menu_setsubmenu(void *mi, ffui_menu *sub, ffui_window *wnd) {
+static inline void ffui_menu_setsubmenu(void *mi, ffui_menu *sub) {
 	gtk_menu_item_set_submenu((GtkMenuItem*)mi, sub->h);
-	g_object_set_data(G_OBJECT(sub->h), "ffdata", wnd);
 }
 
 FF_EXTERN void _ffui_menu_activate(GtkWidget *mi, gpointer udata);

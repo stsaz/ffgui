@@ -123,7 +123,7 @@ static int mi_submenu(ffui_loader *g, ffstr val)
 	if (!(sub = g->getctl(g->udata, &val)))
 		return FFUI_EINVAL;
 
-	ffui_menu_setsubmenu(g->mi, sub, g->wnd);
+	ffui_menu_setsubmenu(g->mi, sub);
 	return 0;
 }
 
