@@ -230,7 +230,7 @@ static inline void ffui_view_grp(ffui_view *v, int i, ffui_viewgrp *vg) {
 
 #define ffui_view_nitems(v)  ListView_GetItemCount((v)->h)
 #define ffui_view_setcount(v, n, redraw) \
-	ffui_ctl_send(v, LVM_SETITEMCOUNT, n, (redraw) ? 0 : LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL)
+	ffui_ctl_send(v, LVM_SETITEMCOUNT, n, ((redraw) ? 0 : LVSICF_NOINVALIDATEALL) | LVSICF_NOSCROLL)
 
 /** Redraw items in range. */
 #define ffui_view_redraw(v, first, last) \
@@ -239,13 +239,7 @@ static inline void ffui_view_grp(ffui_view *v, int i, ffui_viewgrp *vg) {
 #define _FFUI_VIEW_REDRAW_N  50
 
 static inline void ffui_post_view_setdata(ffui_view *c, uint first, int delta) {
-	uint last = first;
-	if (delta > 0) {
-		last = first + _FFUI_VIEW_REDRAW_N;
-	} else if (delta < 0) {
-		last = first + _FFUI_VIEW_REDRAW_N;
-		first = ffmax((int)first - _FFUI_VIEW_REDRAW_N, 0);
-	}
+	uint last = (!delta) ? first : first + _FFUI_VIEW_REDRAW_N;
 	ffui_view_redraw(c, first, last);
 }
 

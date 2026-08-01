@@ -9,6 +9,8 @@ struct ffui_view_disp {
 	uint idx;
 	uint sub;
 	ffstr text;
+	uint paint_begin :1;
+	uint paint_end :1;
 };
 
 #define ffui_view_dispinfo_index(d)  (d)->idx
@@ -29,7 +31,7 @@ struct ffui_view {
 	ushort dispinfo_id;
 	ushort edit_id;
 	ffui_menu *popup_menu;
-	uint draw_end_notify :1; // Call on_action(dispinfo_id) with dispinfo_item=NULL after drawing procedure has been finished
+	uint paint_notify :1; // Call on_action(dispinfo_id) when the painting procedure begins or ends
 
 	union {
 	GtkTreePath *path; // dblclick_id
@@ -39,7 +41,7 @@ struct ffui_view {
 	} edited;
 	ffstr drop_data;
 	struct {
-		struct ffui_view_disp disp, *dispinfo_item;
+		struct ffui_view_disp *dispinfo_item;
 	};
 	};
 };

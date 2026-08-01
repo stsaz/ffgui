@@ -319,21 +319,29 @@ void ffui_view_setdata(ffui_view *v, uint first, int delta)
 	if (first > rows)
 		return;
 
-	v->dispinfo_item = &v->disp;
+	struct ffui_view_disp disp = {};
+	v->dispinfo_item = &disp;
+
+	if (v->paint_notify) {
+		disp.paint_begin = 1;
+		v->wnd->on_action(v->wnd, v->dispinfo_id);
+		disp.paint_begin = 0;
+		ffcpu_fence_acquire();
+	}
 
 	char buf[1024];
 	ffui_viewitem it = {};
 	for (uint i = first;  (int)i < n;  i++) {
 
-		v->disp.idx = i;
+		disp.idx = i;
 
-		ffstr_set(&v->disp.text, buf, sizeof(buf) - 1);
+		ffstr_set(&disp.text, buf, sizeof(buf) - 1);
 		buf[0] = '\0';
-		v->disp.sub = 0;
+		disp.sub = 0;
 		v->wnd->on_action(v->wnd, v->dispinfo_id);
 
 		it.idx = i;
-		buf[v->disp.text.len] = '\0';
+		buf[disp.text.len] = '\0';
 		it.text = (char*)buf;
 		int ins = 0;
 		if (i >= rows) {
@@ -350,15 +358,15 @@ void ffui_view_setdata(ffui_view *v, uint first, int delta)
 		_ffui_log("idx:%u  text:%s", i, buf);
 
 		for (uint c = 1;  c != cols;  c++) {
-			ffstr_set(&v->disp.text, buf, sizeof(buf) - 1);
+			ffstr_set(&disp.text, buf, sizeof(buf) - 1);
 			buf[0] = '\0';
-			v->disp.sub = c;
+			disp.sub = c;
 			v->wnd->on_action(v->wnd, v->dispinfo_id);
 			if (ins && buf[0] == '\0')
 				continue;
 
 			it.idx = i;
-			buf[v->disp.text.len] = '\0';
+			buf[disp.text.len] = '\0';
 			it.text = (char*)buf;
 			ffui_view_set(v, c, &it);
 			_ffui_log("idx:%u  text:%s", i, buf);
@@ -373,8 +381,9 @@ void ffui_view_setdata(ffui_view *v, uint first, int delta)
 		i--;
 	}
 
-	if (v->draw_end_notify) {
-		v->dispinfo_item = NULL;
+	if (v->paint_notify) {
+		disp.paint_end = 1;
+		ffcpu_fence_release();
 		v->wnd->on_action(v->wnd, v->dispinfo_id);
 	}
 }

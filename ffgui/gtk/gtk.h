@@ -174,10 +174,6 @@ FF_EXTERN ffsize ffui_send(void *ctl, uint id, void *udata);
 	*(lo) = (val) & 0xffff
 #endif
 
-static inline void ffui_send_view_setdata(ffui_view *v, uint first, int delta) {
-	ffsize p = FFINT_JOIN(first, delta);
-	ffui_send(v, FFUI_VIEW_SETDATA, (void*)p);
-}
 static inline void ffui_post_view_setdata(ffui_view *v, uint first, int delta) {
 	ffsize p = FFINT_JOIN(first, delta);
 	ffui_post(v, FFUI_VIEW_SETDATA, (void*)p);
