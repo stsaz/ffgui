@@ -217,7 +217,7 @@ int ffui_iconlist_create(ffui_iconlist *il, uint width, uint height)
 void ffui_font_set(ffui_font *fnt, const ffstr *name, int height, uint flags)
 {
 	if (name != NULL) {
-		fnt->lf.lfCharSet = OEM_CHARSET;
+		fnt->lf.lfCharSet = DEFAULT_CHARSET;
 		fnt->lf.lfQuality = PROOF_QUALITY;
 		ffsz_utow_n(fnt->lf.lfFaceName, FF_COUNT(fnt->lf.lfFaceName), name->ptr, name->len);
 	}
