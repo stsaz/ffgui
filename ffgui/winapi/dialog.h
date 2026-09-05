@@ -75,7 +75,7 @@ static inline char* ffui_dlg_open(ffui_dialog *d, ffui_window *wnd) {
 }
 
 /**
-@fn: default filename */
+fn: (optional) normalized file path */
 static inline char* ffui_dlg_save(ffui_dialog *d, ffui_window *wnd, const char *fn, ffsize fnlen) {
 	wchar_t ws[4096];
 	ffsize n = 0;

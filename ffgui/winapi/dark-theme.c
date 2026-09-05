@@ -48,8 +48,36 @@ int dark_theme_init(struct dark_theme *t, unsigned flags)
 		&& t->_DwmSetWindowAttribute);
 }
 
+enum DARK_THEME dark_theme_query()
+{
+	DWORD data, cap = sizeof(data);
+	return (!RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", L"AppsUseLightTheme", RRF_RT_REG_DWORD, NULL, &data, &cap)
+		&& data == 0);
+}
+
 #define dkth_subclass(h, func, t) \
 	SetWindowSubclass(h, func, (UINT_PTR)1, (DWORD_PTR)(t))
+
+static LRESULT dkth_trackbar_cd(struct dark_theme *t, const NMCUSTOMDRAW *ncd)
+{
+	switch (ncd->dwDrawStage) {
+	case CDDS_PREPAINT:
+		return CDRF_NOTIFYITEMDRAW;
+
+	case CDDS_ITEMPREPAINT:
+		switch (ncd->dwItemSpec) {
+		case TBCD_THUMB:
+			// Note: can use `(ncd->uItemState & CDIS_SELECTED)` to adjust the thumb color when it is being dragged
+			FillRect(ncd->hdc, &ncd->rc, t->trackbar_thumb_br);
+			return CDRF_SKIPDEFAULT;
+
+		case TBCD_CHANNEL:
+			FillRect(ncd->hdc, &ncd->rc, t->trackbar_br);
+			return CDRF_SKIPDEFAULT;
+		}
+	}
+	return -1;
+}
 
 LRESULT WINAPI dark_theme_wnd_proc(struct dark_theme *t, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -69,6 +97,19 @@ LRESULT WINAPI dark_theme_wnd_proc(struct dark_theme *t, HWND hWnd, UINT uMsg, W
 		GetClientRect(hWnd, &rect);
 		FillRect(hdc, &rect, t->window_bg_br);
 		return 1;
+	}
+
+	case WM_NOTIFY: {
+		const LPNMHDR nh = (LPNMHDR)lParam;
+		wchar_t cname[32];
+		switch (nh->code) {
+		case NM_CUSTOMDRAW:
+			if (!GetClassNameW(nh->hwndFrom, cname, sizeof(cname) / 2))
+				break;
+			if (!wcscmp(cname, L"msctls_trackbar32"))
+				return dkth_trackbar_cd(t, (NMCUSTOMDRAW*)lParam);
+		}
+		break;
 	}
 	}
 
@@ -256,6 +297,39 @@ static LRESULT WINAPI dkth_tab_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
+static LRESULT WINAPI dkth_edit_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	struct dark_theme *t = (void*)dwRefData;
+
+	switch (uMsg) {
+	case WM_NCCALCSIZE:
+		if (wParam)
+			InflateRect((LPRECT)lParam, -1, -1);
+		break;
+
+	case WM_NCPAINT: {
+		DefSubclassProc(hWnd, uMsg, wParam, lParam);
+
+		RECT r;
+		GetClientRect(hWnd, &r);
+
+		HDC hdc = GetWindowDC(hWnd);
+		HPEN pen = CreatePen(PS_SOLID, 1, t->edit_frame);
+		SelectObject(hdc, pen);
+		SelectObject(hdc, GetStockObject(NULL_BRUSH));
+		Rectangle(hdc, 0, 0, r.right + 2, r.bottom + 2);
+		DeleteObject(pen);
+		ReleaseDC(hWnd, hdc);
+		return 0;
+	}
+
+	case WM_ERASEBKGND:
+		return 1;
+	}
+
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
 static LRESULT WINAPI dkth_listview_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
 	const struct dark_theme *t = (struct dark_theme*)dwRefData;
@@ -296,6 +370,43 @@ static int dkth_listview(struct dark_theme *t, HWND h)
 	ListView_SetTextBkColor(h, t->listview_bg);
 	ListView_SetTextColor(h, t->listview_text);
 	return 0;
+}
+
+static LRESULT WINAPI dkth_progressbar_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	struct dark_theme *t = (void*)dwRefData;
+
+	switch (uMsg) {
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		IntersectClipRect(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom);
+
+		RECT r;
+		GetClientRect(hWnd, &r);
+
+		// Background
+		FillRect(hdc, &r, t->progress_bg_br);
+
+		// Foreground
+		PBRANGE pbr;
+		SendMessageW(hWnd, PBM_GETRANGE, 0, (LPARAM)&pbr);
+		int range = pbr.iHigh - pbr.iLow;
+		int pos = (int)SendMessageW(hWnd, PBM_GETPOS, 0, 0);
+		if (range > 0 && pos > pbr.iLow) {
+			r.right = r.left + (int)((long long)(pos - pbr.iLow) * (r.right - r.left) / range);
+			FillRect(hdc, &r, t->progress_br);
+		}
+
+		EndPaint(hWnd, &ps);
+		return 0;
+	}
+
+	case WM_ERASEBKGND:
+		return 1;
+	}
+
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
 static LRESULT WINAPI dkth_stbar_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
@@ -361,12 +472,6 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 		return 1;
 
 	switch (flags & 0xff) {
-	case DARK_THEME_QUERY: {
-		DWORD data, cap = sizeof(data);
-		return (!RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", L"AppsUseLightTheme", RRF_RT_REG_DWORD, NULL, &data, &cap)
-			&& data == 0);
-	}
-
 	case DARK_THEME_APP:
 		if (t->_SetPreferredAppMode) {
 			((SetPreferredAppMode_t)t->_SetPreferredAppMode)(2);
@@ -398,9 +503,19 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 		return 0;
 
 	case DARK_THEME_BUTTON:
-	case DARK_THEME_EDIT:
 		SetWindowTheme(h, L"DarkMode_Explorer", NULL);
 		return 0;
+
+	case DARK_THEME_EDIT: {
+		SetWindowTheme(h, L"DarkMode_Explorer", NULL);
+		dkth_subclass(h, dkth_edit_proc, t);
+		DWORD es = GetWindowLongPtr(h, GWL_EXSTYLE);
+		if (es & WS_EX_CLIENTEDGE) {
+			SetWindowLongPtr(h, GWL_EXSTYLE, es & ~WS_EX_CLIENTEDGE);
+			SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		}
+		return 0;
+	}
 
 	case DARK_THEME_CHECKBOX:
 	case DARK_THEME_RADIOBUTTON:
@@ -423,6 +538,21 @@ int dark_theme_ctl(struct dark_theme *t, unsigned flags, HWND h)
 		if (!t->tab_frame_br && t->tab_frame_sel != t->tab_bg_sel)
 			t->tab_frame_br = CreateSolidBrush(t->tab_frame_sel);
 		dkth_subclass(h, dkth_tab_proc, t);
+		return 0;
+
+	case DARK_THEME_TRACKBAR:
+		if (!t->trackbar_br)
+			t->trackbar_br = CreateSolidBrush(t->trackbar_bg);
+		if (!t->trackbar_thumb_br)
+			t->trackbar_thumb_br = CreateSolidBrush(t->trackbar_thumb);
+		return 0;
+
+	case DARK_THEME_PROGRESSBAR:
+		if (!t->progress_bg_br)
+			t->progress_bg_br = CreateSolidBrush(t->progress_bg);
+		if (!t->progress_br)
+			t->progress_br = CreateSolidBrush(t->progress);
+		dkth_subclass(h, dkth_progressbar_proc, t);
 		return 0;
 
 	case DARK_THEME_LISTVIEW:

@@ -463,6 +463,7 @@ int ffui_track_create(ffui_trackbar *t, ffui_window *parent)
 {
 	if (ctl_create((ffui_ctl*)t, FFUI_UID_TRACKBAR, parent->h, 0, 0))
 		return 1;
+	dark_theme_ctl(ffui_theme, DARK_THEME_TRACKBAR, t->h);
 	return 0;
 }
 
@@ -470,6 +471,7 @@ int ffui_progress_create(ffui_ctl *c, ffui_window *parent)
 {
 	if (ctl_create(c, FFUI_UID_PROGRESSBAR, parent->h, 0, 0))
 		return 1;
+	dark_theme_ctl(ffui_theme, DARK_THEME_PROGRESSBAR, c->h);
 	return 0;
 }
 
@@ -1451,6 +1453,11 @@ static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l)
 		break;
 
 	case WM_NOTIFY:
+		if (ffui_theme) {
+			code = dark_theme_wnd_proc(ffui_theme, h, msg, w, l);
+			if ((ssize_t)code != -1)
+				return code;
+		}
 		id = wnd_nfy(wnd, (NMHDR*)l, &code);
 		if (id == ~0U)
 			return code;
