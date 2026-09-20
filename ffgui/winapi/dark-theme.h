@@ -14,6 +14,8 @@ struct dark_theme {
 		, tab_bg_sel		// Tab background (selected)
 		, tab_frame_sel		// Tab frame (selected)
 		, edit_frame		// Edit control frame
+		, edit_frame_focus	// Edit control frame (focused)
+		, button_frame		// Button frame
 		, trackbar_bg		// Trackbar background
 		, trackbar_thumb	// Trackbar thumb
 		, progress_bg		// Progress bar background
@@ -33,6 +35,9 @@ struct dark_theme {
 		, progress_br;
 	HANDLE menu_theme
 		, stbar_theme;
+	HPEN button_frame_pen
+		, edit_frame_pen
+		, edit_frame_focus_pen;
 
 	void* _AllowDarkModeForWindow;
 	void* _SetPreferredAppMode;
@@ -110,8 +115,8 @@ static inline void dark_theme_colors(struct dark_theme *t, unsigned background, 
 	t->tab_bg_sel = t->tab_frame_sel = dark_theme_rgb2cr(background + 0x111111);
 	t->menu_bg_light = t->tab_bg_light = dark_theme_rgb2cr(background + 0x111111);
 	t->trackbar_bg = t->progress_bg = dark_theme_rgb2cr(background + 0x222222);
-	t->edit_frame = dark_theme_rgb2cr(background + 0x333333);
-	t->trackbar_thumb = t->progress = dark_theme_rgb2cr(0x0066ff);
+	t->edit_frame = t->button_frame = dark_theme_rgb2cr(background + 0x333333);
+	t->edit_frame_focus = t->trackbar_thumb = t->progress = dark_theme_rgb2cr(0x0078d7);
 	t->text = t->listview_text = dark_theme_rgb2cr(text);
 	t->text_alt = t->listview_header = dark_theme_rgb2cr(text - 0x111111);
 }
