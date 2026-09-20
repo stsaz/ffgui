@@ -1,6 +1,12 @@
 /** C++ cross-platform GUI interface
 2023, Simon Zolin */
 
+#ifdef FF_WIN
+#include <ffgui/winapi/winapi.h>
+#else
+#include <ffgui/gtk/gtk.h>
+#endif
+
 struct ffui_menuxx : ffui_menu {
 	~ffui_menuxx() { ffui_menu_destroy(this); }
 	void	check(uint id, bool check) { ffui_menu_check(this, id, check); }
@@ -145,6 +151,8 @@ struct ffui_windowxx : ffui_window {
 
 	ffui_pos pos() { ffui_pos p; ffui_wnd_placement(this, &p); return p; }
 	void	place(const ffui_pos &pos) { ffui_wnd_setplacement(this, SW_SHOWNORMAL, &pos); }
+
+	void	tab_auto_switch(ffui_tab *tab) { this->tab = tab; }
 };
 
 struct ffui_dialogxx : ffui_dialog {

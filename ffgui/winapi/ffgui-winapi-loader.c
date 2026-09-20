@@ -1469,6 +1469,22 @@ static int wnd_popupfor(ffui_loader *g, ffstr val)
 	return 0;
 }
 
+/** Add 'Ctrl+Tab' accel */
+static void accel_ctrl_tab_add(ffvec *accels)
+{
+	if (!ffvec_growT(accels, 2, ffui_wnd_hotkey))
+		return;
+	ffui_wnd_hotkey *a = ffslice_endT(accels, ffui_wnd_hotkey);
+	accels->len += 2;
+
+	a->hk = (FCONTROL << 16) | VK_TAB;
+	a->cmd = FFUI_CMD_TAB_NEXT;
+
+	a++;
+	a->hk = ((FCONTROL | FSHIFT) << 16) | VK_TAB;
+	a->cmd = FFUI_CMD_TAB_PREV;
+}
+
 static int wnd_done(ffui_loader *g)
 {
 	if (g->ico.icon.h != NULL) {
@@ -1490,10 +1506,11 @@ static int wnd_done(ffui_loader *g)
 		SetMenu(g->wnd->h, mm);
 	}
 
-	if (g->accels.len != 0) {
+	accel_ctrl_tab_add(&g->accels);
+	if (g->accels.len) {
 		int r = ffui_wnd_hotkeys(g->wnd, (void*)g->accels.ptr, g->accels.len);
 		g->accels.len = 0;
-		if (r != 0)
+		if (r)
 			return FFUI_ESYS;
 	}
 

@@ -1402,6 +1402,20 @@ static void _ffui_wnd_size(ffui_window *wnd, RECT rect)
 	SetWindowPos(wnd->h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
+static int tab_switch(ffui_tab *tab, uint next)
+{
+	HWND h = tab->h;
+	uint n = SendMessageW(h, TCM_GETITEMCOUNT, 0, 0);
+	if (!n)
+		return 1;
+	int cur = SendMessageW(h, TCM_GETCURSEL, 0, 0);
+	int val = (cur + 1) % n;
+	if (!next)
+		val = (cur) ? cur - 1 : n - 1;
+	SendMessageW(h, TCM_SETCURSEL, val, 0);
+	return 0;
+}
+
 /*
 exit
 	* via Close button: WM_SYSCOMMAND(SC_CLOSE) -> WM_CLOSE -> WM_DESTROY
@@ -1444,6 +1458,11 @@ static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l)
 				if (!wnd->manual_close)
 					SendMessageW(h, WM_CLOSE, 0, 0);
 				break;
+
+			} else if ((id == FFUI_CMD_TAB_NEXT || id == FFUI_CMD_TAB_PREV)
+					&& wnd->tab) {
+				if (!tab_switch(wnd->tab, (id == FFUI_CMD_TAB_NEXT)))
+					id = wnd->tab->chsel_id;
 			}
 		} else {
 			id = wnd_wm_command(wnd, (int)w, (HWND)l);

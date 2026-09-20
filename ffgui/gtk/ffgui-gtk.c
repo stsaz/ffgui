@@ -496,12 +496,48 @@ static gboolean vbox_draw(GtkWidget* self, cairo_t* cr, gpointer udata)
 	return 0;
 }
 
+static void tab_switch(ffui_tab *tab, uint next)
+{
+	GtkNotebook *nb = (void*)tab->h;
+	int n = gtk_notebook_get_n_pages(nb);
+	if (!n)
+		return;
+	int cur = gtk_notebook_get_current_page(nb);
+	int val = (cur + 1) % n;
+	if (!next)
+		val = (cur) ? cur - 1 : n - 1;
+	gtk_notebook_set_current_page(nb, val);
+}
+
+static gboolean wnd_key_press(GtkWidget *widget, GdkEventKey *ev, gpointer udata)
+{
+	ffui_window *w = udata;
+	uint m = ev->state & (GDK_MODIFIER_MASK & ~GDK_LOCK_MASK);
+	_ffui_log("%s  keyval:%xu  state:%xu"
+		, __func__, ev->keyval, ev->state);
+
+	switch (ev->keyval) {
+	case GDK_KEY_Tab:
+	case GDK_KEY_ISO_Left_Tab:
+		if (w->tab
+			&& (m == (GDK_CONTROL_MASK | GDK_SHIFT_MASK)
+				|| m == GDK_CONTROL_MASK)) {
+			tab_switch(w->tab, (m == GDK_CONTROL_MASK));
+			return 1;
+		}
+		break;
+	}
+
+	return 0;
+}
+
 int ffui_wnd_create(ffui_window *w)
 {
 	w->uid = FFUI_UID_WINDOW;
 	w->h = (void*)gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	g_object_set_data(G_OBJECT(w->h), "ffdata", w);
 	g_signal_connect(w->h, "delete-event", G_CALLBACK(_ffui_wnd_onclose), w);
+	g_signal_connect(w->h, "key-press-event", G_CALLBACK(wnd_key_press), w);
 
 	GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
 	gtk_container_add(GTK_CONTAINER(w->h), scroll);

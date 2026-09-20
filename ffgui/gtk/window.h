@@ -15,6 +15,8 @@ struct ffui_window {
 
 	uint onclose_id;
 	uint hide_on_close :1;
+
+	ffui_tab *tab; // Tab control for auto-switching tabs functionality (Ctrl+Tab)
 };
 
 static inline int ffui_wnd_initstyle() {

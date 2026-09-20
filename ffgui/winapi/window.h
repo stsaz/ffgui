@@ -23,6 +23,7 @@ struct ffui_window {
 	ffui_trayicon *trayicon;
 	ffui_paned *paned_first;
 	ffui_statusbar *stbar;
+	ffui_tab *tab; // Tab control for auto-switching tabs functionality (Ctrl+Tab)
 	HACCEL acceltbl;
 	ffvec ghotkeys; //struct wnd_ghotkey[]
 
@@ -47,7 +48,10 @@ static inline void ffui_wnd_setpopup(ffui_window *w) {
 }
 
 enum {
-	FFUI_WM_USER_TRAY = WM_USER + 1000
+	FFUI_WM_USER_TRAY = WM_USER + 1000,
+
+	FFUI_CMD_TAB_NEXT = 900,
+	FFUI_CMD_TAB_PREV = 901,
 };
 
 FF_EXTERN int ffui_wnd_create2(ffui_window *w, uint flags);
