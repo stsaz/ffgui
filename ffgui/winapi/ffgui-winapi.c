@@ -238,7 +238,7 @@ void ffui_font_set(ffui_font *fnt, const ffstr *name, int height, uint flags)
 
 static int setpos_noscale(void *ctl, int x, int y, int cx, int cy, int flags)
 {
-	return !SetWindowPos(((ffui_ctl*)ctl)->h, HWND_TOP, x, y, cx, cy, SWP_NOACTIVATE | flags);
+	return !SetWindowPos(((ffui_ctl*)ctl)->h, HWND_TOP, x, y, cx, cy, SWP_NOACTIVATE | SWP_NOZORDER | flags);
 }
 
 static void getpos_noscale(HWND h, ffui_pos *r)

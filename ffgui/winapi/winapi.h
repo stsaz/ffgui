@@ -270,7 +270,7 @@ FF_EXTERN void ffui_getpos2(void *ctl, ffui_pos *r, uint flags);
 
 static inline int ffui_setpos(void *ctl, int x, int y, int cx, int cy, int flags) {
 	return !SetWindowPos(((ffui_ctl*)ctl)->h, HWND_TOP, _ffui_dpi_scale(x), _ffui_dpi_scale(y)
-		, _ffui_dpi_scale(cx), _ffui_dpi_scale(cy), SWP_NOACTIVATE | flags);
+		, _ffui_dpi_scale(cx), _ffui_dpi_scale(cy), SWP_NOACTIVATE | SWP_NOZORDER | flags);
 }
 
 #define ffui_setposrect(ctl, rect, flags) \
