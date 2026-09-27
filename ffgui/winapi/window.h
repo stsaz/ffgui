@@ -4,6 +4,11 @@
 #pragma once
 #include <ffgui/winapi/winapi.h>
 
+struct ffui_wnd_keymap {
+	ushort appcmd; // WM_APPCOMMAND command
+	ushort action_id;
+};
+
 struct ffui_window {
 	HWND h;
 	enum FFUI_UID uid;
@@ -37,6 +42,9 @@ struct ffui_window {
 
 	ushort onclose_id;
 	ushort onminimize_id, onmaximize_id, onactivate_id;
+
+	const struct ffui_wnd_keymap *keymap; // Key-to-action mapping
+	uint keymap_n;
 };
 
 FF_EXTERN int ffui_wnd_initstyle();
@@ -111,6 +119,12 @@ typedef struct ffui_wnd_hotkey {
 
 /** Set hotkey table. */
 FF_EXTERN int ffui_wnd_hotkeys(ffui_window *w, const struct ffui_wnd_hotkey *hotkeys, ffsize n);
+
+/** Set key-to-action mapping. */
+static inline void ffui_wnd_keymap(ffui_window *w, const struct ffui_wnd_keymap *map, uint n) {
+	w->keymap = map;
+	w->keymap_n = n;
+}
 
 /** Register a global hotkey. */
 FF_EXTERN int ffui_wnd_ghotkey_reg(ffui_window *w, uint hk, uint cmd);

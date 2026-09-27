@@ -528,6 +528,13 @@ static gboolean wnd_key_press(GtkWidget *widget, GdkEventKey *ev, gpointer udata
 		break;
 	}
 
+	for (uint i = 0;  i < w->keymap_n;  i++) {
+		if (w->keymap[i].keyval == ev->keyval) {
+			w->on_action(w, w->keymap[i].action_id);
+			return 1;
+		}
+	}
+
 	return 0;
 }
 

@@ -4,6 +4,11 @@
 #pragma once
 #include <ffgui/gtk/gtk.h>
 
+struct ffui_wnd_keymap {
+	uint keyval; // GDK keyval
+	uint action_id;
+};
+
 struct ffui_window {
 	GtkWindow *h;
 	enum FFUI_UID uid;
@@ -17,6 +22,9 @@ struct ffui_window {
 	uint hide_on_close :1;
 
 	ffui_tab *tab; // Tab control for auto-switching tabs functionality (Ctrl+Tab)
+
+	const struct ffui_wnd_keymap *keymap; // Key-to-action mapping
+	uint keymap_n;
 };
 
 static inline int ffui_wnd_initstyle() {
@@ -54,6 +62,12 @@ typedef struct ffui_wnd_hotkey {
 
 /** Set hotkey table. */
 FF_EXTERN int ffui_wnd_hotkeys(ffui_window *w, const ffui_wnd_hotkey *hotkeys, ffsize n);
+
+/** Set key-to-action mapping. */
+static inline void ffui_wnd_keymap(ffui_window *w, const struct ffui_wnd_keymap *map, uint n) {
+	w->keymap = map;
+	w->keymap_n = n;
+}
 
 #define ffui_wnd_settextz(w, text)  gtk_window_set_title((w)->h, text)
 static inline void ffui_wnd_settextstr(ffui_window *w, const ffstr *str) {

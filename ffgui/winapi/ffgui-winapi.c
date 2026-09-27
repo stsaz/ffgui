@@ -1561,6 +1561,17 @@ apply_theme:
 		ffui_wnd_ghotkey_call(wnd, w);
 		break;
 
+	case WM_APPCOMMAND: {
+		print("WM_APPCOMMAND", h, w, l);
+		uint cmd = GET_APPCOMMAND_LPARAM(l);
+		for (uint i = 0;  i < wnd->keymap_n;  i++)
+			if (wnd->keymap[i].appcmd == cmd) {
+				wnd->on_action(wnd, wnd->keymap[i].action_id);
+				return 1;
+			}
+		break;
+	}
+
 	case WM_ACTIVATE:
 		print("WM_ACTIVATE", h, w, l);
 		switch (w) {
