@@ -885,6 +885,15 @@ static int edit_action(ffui_loader *g, ffstr val)
 		return FFUI_EINVAL;
 	return 0;
 }
+static int edit_width(ffui_loader *g, ffint64 val)
+{
+	if (val <= 0)
+		return FFUI_EINVAL;
+	g->r.cx = ffui_edit_width(g->actl.edit, val);
+	g->auto_pos = 1;
+	g->resize_flags &= ~F_RESIZE_CX;
+	return 0;
+}
 static const ffconf_arg editbox_args[] = {
 	{ "font",		T_OBJ,		_F(label_font) },
 	{ "onchange",	T_STR,		_F(edit_action) },
@@ -894,6 +903,7 @@ static const ffconf_arg editbox_args[] = {
 	{ "style",		T_STRLIST,	_F(edit_style) },
 	{ "text",		T_STR,		_F(label_text) },
 	{ "tooltip",	T_STR,		_F(ctl_tooltip) },
+	{ "width",		T_INT32,	_F(edit_width) },
 	{ NULL,			T_CLOSE,	_F(ctl_done) },
 };
 static int new_edit(ffui_loader *g, ffstr name, unsigned textbox)

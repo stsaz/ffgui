@@ -62,3 +62,5 @@ enum FFUI_EDIT_SCROLL {
 /*
 type: enum FFUI_EDIT_SCROLL */
 #define ffui_edit_scroll(e, type)  ffui_send((e)->h, EM_SCROLL, type, 0)
+
+FF_EXTERN uint ffui_edit_width(ffui_edit *e, uint n);

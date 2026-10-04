@@ -41,6 +41,7 @@ static void ctl_reset(ffui_loader *g)
 {
 	g->f_horiz = 0;
 	g->f_cbx_editable = 0;
+	g->f_edit_fixed = 0;
 }
 
 enum CTL_PLACE {
@@ -419,7 +420,10 @@ static int combobox_new(ffui_loader *g, ffstr name)
 // EDITBOX
 static int edit_done(ffui_loader *g)
 {
-	ctl_place_f(g, g->ctl, CTL_PLACE_EXPAND | CTL_PLACE_FILL);
+	uint flags = (g->f_edit_fixed) ? 0 : (CTL_PLACE_EXPAND | CTL_PLACE_FILL);
+	if (g->f_edit_fixed)
+		gtk_widget_set_halign(g->ctl->h, GTK_ALIGN_START);
+	ctl_place_f(g, g->ctl, flags);
 	return 0;
 }
 static int edit_text(ffui_loader *g, ffstr val)
@@ -435,6 +439,14 @@ static int edit_style(ffui_loader *g, ffstr val)
 		return btn_style(g, val);
 	return 0;
 }
+static int edit_width(ffui_loader *g, ffint64 val)
+{
+	if (val <= 0)
+		return FFUI_EINVAL;
+	ffui_edit_width(g->edit, val);
+	g->f_edit_fixed = 1;
+	return 0;
+}
 static int edit_onchange(ffui_loader *g, ffstr val)
 {
 	if (!(g->edit->change_id = g->getcmd(g->udata, &val)))
@@ -445,6 +457,7 @@ static const ffconf_arg edit_args[] = {
 	{ "onchange",T_STR,		_F(edit_onchange) },
 	{ "style",	T_STRLIST,	_F(edit_style) },
 	{ "text",	T_STR,		_F(edit_text) },
+	{ "width",	T_INT32,	_F(edit_width) },
 	{ NULL,		T_CLOSE,	_F(edit_done) },
 };
 

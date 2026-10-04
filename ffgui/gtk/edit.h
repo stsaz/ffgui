@@ -39,6 +39,9 @@ static inline ffstr ffui_edit_text(ffui_edit *e) {
 #define ffui_edit_password(e, invisible) \
 	gtk_entry_set_visibility(GTK_ENTRY((e)->h), !invisible)
 
+#define ffui_edit_width(e, n) \
+	gtk_entry_set_width_chars(GTK_ENTRY((e)->h), n)
+
 #define ffui_edit_sel(e, start, end) \
 	gtk_editable_select_region(GTK_EDITABLE((e)->h), start, end);
 

@@ -459,6 +459,30 @@ int ffui_edit_addtext(ffui_edit *c, const char *text, size_t len)
 	return 0;
 }
 
+uint ffui_edit_width(ffui_edit *e, uint n)
+{
+	HDC hdc = GetDC(e->h);
+	uint cx = 20;
+	HFONT font = (HFONT)SendMessageW(e->h, WM_GETFONT, 0, 0);
+	if (font) {
+		HFONT old = (HFONT)SelectObject(hdc, font);
+
+		wchar_t buf[16];
+		n = ffmin(n, sizeof(buf) / 2 - 1);
+		for (uint i = 0;  i < (uint)n;  i++) {
+			buf[i] = L'0';
+		}
+		SIZE sz;
+		if (GetTextExtentPoint32W(hdc, buf, n, &sz))
+			cx = _ffui_dpi_descale(sz.cx) + 8;
+
+		if (old)
+			SelectObject(hdc, old);
+	}
+	ReleaseDC(e->h, hdc);
+	return cx;
+}
+
 int ffui_track_create(ffui_trackbar *t, ffui_window *parent)
 {
 	if (ctl_create((ffui_ctl*)t, FFUI_UID_TRACKBAR, parent->h, 0, 0))
