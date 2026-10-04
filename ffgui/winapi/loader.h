@@ -130,8 +130,3 @@ FF_EXTERN int ffui_ldr_load(ffui_loader *g, const char *window);
 
 /** Load GUI from file. */
 FF_EXTERN int ffui_ldr_loadfile(ffui_loader *g, const char *fn);
-
-/** Apply config data.
-Format:
-	(ctx.key val CRLF)... */
-FF_EXTERN void ffui_ldr_loadconf(ffui_loader *g, ffstr data);

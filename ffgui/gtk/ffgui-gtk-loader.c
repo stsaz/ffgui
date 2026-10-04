@@ -4,6 +4,8 @@
 #include <ffsys/error.h>
 #include <ffgui/gtk/loader.h>
 #include <ffgui/conf-scheme.h>
+static const ffconf_arg top_args[];
+#include <ffgui/load.h>
 #include <ffsys/path.h>
 #include <ffsys/file.h>
 
@@ -539,8 +541,6 @@ static int trkbar_onscroll(ffui_loader *g, ffstr val)
 static int trkbar_pagesize(ffui_loader *g, ffint64 val) { return 0; }
 static int trkbar_done(ffui_loader *g)
 {
-	if (g->f_loadconf)
-		return 0;
 	ctl_place_f(g, g->ctl, CTL_PLACE_EXPAND | CTL_PLACE_FILL);
 	return 0;
 }
@@ -942,152 +942,4 @@ void ffui_ldr_fin(ffui_loader *g)
 	ffmem_free(g->errstr);
 	ffmem_free(g->wnd_name);
 	vars_free(&g->vars);
-}
-
-int ffui_ldr_load(ffui_loader *g, const char *window)
-{
-	int r, r2 = 0;
-	struct ffconf_obj c = {
-		.lt.line = g->conf_line,
-		.lt.line_off = g->conf_col,
-	};
-
-	ffconf_scheme cs = {};
-	ffconf_scheme_addctx(&cs, top_args, g);
-	g->cs = &cs;
-
-	ffstr val = {};
-	while (g->conf.len) {
-		if (FFCONF_ERROR == (r = ffconf_obj_read(&c, &g->conf, &val)))
-			goto end;
-		_ffui_log("conf: %d: %S", ffconf_line(&c.lt), &val);
-
-		if ((r2 = ffconf_scheme_process(&cs, r, val))) {
-			r = r2;
-			goto end;
-		}
-
-		if (g->wnd_complete && window && ffsz_eq(g->wnd_name, window)) {
-			// Stop after we've finished loading the target window
-			g->conf_line = c.lt.line;
-			g->conf_col = c.lt.line_off;
-			break;
-		}
-	}
-
-	ffstr_null(&val);
-	r = 0;
-
-end:
-	ffconf_scheme_destroy(&cs);
-	if (ffconf_obj_fin(&c) && r == 0)
-		r = FFCONF_ERROR;
-
-	if (r != 0) {
-		char errbuf[100];
-		const char *err = ffconf_error(&c.lt);
-		if (r2 != 0) {
-			err = cs.errmsg;
-			if (r2 != FFCONF_ERROR) {
-				ffsz_format(errbuf, sizeof(errbuf), "%d", r2);
-				err = errbuf;
-			}
-		}
-		ffmem_free(g->errstr);
-		g->errstr = ffsz_allocfmt("%u:%u: near \"%S\": %s"
-			, (int)ffconf_line(&c.lt), (int)ffconf_col(&c.lt)
-			, &val
-			, err);
-	}
-
-	return r;
-}
-
-int ffui_ldr_loadfile(ffui_loader *g, const char *fn)
-{
-	int r = -1;
-	ffvec data = {};
-	if (fffile_readwhole(fn, &data, 1*1024*1024)) {
-		ffmem_free(g->errstr);
-		g->errstr = ffsz_allocfmt("%s: %s", fn, fferr_strptr(fferr_last()));
-		goto end;
-	}
-
-	ffpath_splitpath(fn, ffsz_len(fn), &g->path, NULL);
-	g->conf = *(ffstr*)&data;
-	r = ffui_ldr_load(g, NULL);
-
-end:
-	ffvec_free(&data);
-	return r;
-}
-
-void ffui_ldr_loadconf(ffui_loader *g, ffstr data)
-{
-	struct ffconf_obj conf = {};
-	ffconf_scheme cs = {};
-	ffstr line, ctx;
-	g->cs = &cs;
-
-	while (data.len != 0) {
-		ffstr_splitby(&data, '\n', &line, &data);
-		ffstr_trimwhite(&line);
-		if (line.len == 0)
-			continue;
-
-		// "ctx0[.ctx1].key val" -> [ "ctx0[.ctx1]", "key val" ]
-		ffssize spc, dot;
-		if ((spc = ffstr_findanyz(&line, " \t")) < 0)
-			continue;
-		if ((dot = ffs_rfindchar(line.ptr, spc, '.')) < 0)
-			continue;
-		ffstr_set(&ctx, line.ptr, dot);
-		ffstr_shift(&line, dot + 1);
-		if (ctx.len == 0 || line.len == 0)
-			continue;
-
-		if (!(g->ctl = g->getctl(g->udata, &ctx)))
-			continue; // couldn't find the control by path "ctx0[.ctx1]"
-
-		switch (g->ctl->uid) {
-		case FFUI_UID_WINDOW:
-			g->wnd = (void*)g->ctl;
-			ffconf_scheme_addctx(&cs, wnd_args, g);  break;
-
-		case FFUI_UID_TRACKBAR:
-			ffconf_scheme_addctx(&cs, trkbar_args, g);  break;
-
-		default:
-			continue;
-		}
-
-		ffbool lf = 0;
-		for (;;) {
-			ffstr val;
-			int r = ffconf_obj_read(&conf, &line, &val);
-			if (r == FFCONF_ERROR) {
-				goto end;
-			} else if (r == FFCONF_MORE && !lf) {
-				// on the next iteration the parser will validate the input line
-				ffstr_setcz(&line, "\n");
-				lf = 1;
-				continue;
-			}
-
-			r = ffconf_scheme_process(&cs, r, val);
-			if (r != 0)
-				goto end;
-			if (lf)
-				break;
-		}
-
-		ffconf_scheme_destroy(&cs);
-		ffmem_zero_obj(&cs);
-		ffconf_obj_fin(&conf);
-		ffmem_zero_obj(&conf);
-	}
-
-end:
-	ffconf_scheme_destroy(&cs);
-	ffconf_obj_fin(&conf);
 }

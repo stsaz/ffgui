@@ -77,7 +77,6 @@ typedef struct ffui_loader {
 	struct {
 		uint f_horiz :1;
 		uint f_horiz_prev :1;
-		uint f_loadconf :1; // ffui_ldr_loadconf()
 		uint f_cbx_editable :1;
 		uint f_edit_fixed :1;
 		uint wnd_complete :1;
@@ -107,8 +106,3 @@ FF_EXTERN int ffui_ldr_load(ffui_loader *g, const char *window);
 
 /** Load GUI from file. */
 FF_EXTERN int ffui_ldr_loadfile(ffui_loader *g, const char *fn);
-
-/** Apply config data.
-Format:
-	(ctx.key val CRLF)... */
-FF_EXTERN void ffui_ldr_loadconf(ffui_loader *g, ffstr data);
