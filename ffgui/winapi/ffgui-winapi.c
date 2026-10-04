@@ -20,7 +20,7 @@
 #include <ffgui/winapi/tree.h>
 #include <ffgui/winapi/view.h>
 #include <ffgui/winapi/window.h>
-#include <ffgui/winapi/dark-theme.c>
+#include <dark-theme.c>
 #include <ffsys/file.h>
 #include <ffsys/process.h>
 #include <ffsys/dir.h>

@@ -9,7 +9,8 @@
 # FFGUI_OBJ
 
 ifeq "$(OS)" "windows"
-	CFLAGS_GUI := -Wno-missing-field-initializers
+	WDT := $(ROOT_DIR)/winapi-dark-theme
+	CFLAGS_GUI := -Wno-missing-field-initializers -I$(WDT)
 	LINKFLAGS_GUI := -lshell32 -luxtheme -lcomctl32 -lcomdlg32 -lgdi32 -lole32 -luuid
 	FFGUI_OBJ := \
 		ffgui-winapi.o \

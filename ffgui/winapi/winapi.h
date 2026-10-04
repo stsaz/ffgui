@@ -5,7 +5,7 @@
 #define UNICODE
 #define _UNICODE
 #include <ffsys/error.h>
-#include <ffgui/winapi/dark-theme.h>
+#include <dark-theme.h>
 #include <ffsys/path.h>
 #include <ffbase/vector.h>
 #include <commctrl.h>

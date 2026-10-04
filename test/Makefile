@@ -4,6 +4,7 @@ ROOT := ..
 FFGUI := $(ROOT)/ffgui
 FFSYS := $(ROOT)/ffsys
 FFBASE := $(ROOT)/ffbase
+WDT := $(ROOT)/winapi-dark-theme
 
 include $(FFBASE)/conf.mk
 
@@ -17,6 +18,7 @@ ifeq "$(OS)" "windows"
 	OBJ += \
 		ffgui-winapi.o \
 		ffgui-winapi-loader.o
+	CFLAGS += -I$(WDT)
 	LINKFLAGS += -lshell32 -luxtheme -lcomctl32 -lcomdlg32 -lgdi32 -lole32 -luuid
 
 else
