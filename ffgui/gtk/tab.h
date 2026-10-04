@@ -29,3 +29,9 @@ static inline void ffui_tab_del(ffui_tab *t, uint idx) {
 FF_EXTERN void ffui_tab_setactive(ffui_tab *t, int idx);
 
 #define ffui_tab_changed_index(t)  (t)->changed_index
+
+static inline void ffui_tab_text_set(ffui_tab *t, uint i, const char *sz) {
+	GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(t->h), i);
+	GtkWidget *label = gtk_notebook_get_tab_label(GTK_NOTEBOOK(t->h), page);
+	gtk_label_set_text(GTK_LABEL(label), sz);
+}

@@ -81,6 +81,7 @@ struct ffui_tabxx : ffui_tab {
 	void	select(uint i) { ffui_send_tab_setactive(this, i); }
 	uint	changed() { return ffui_tab_changed_index(this); }
 	uint	count() { return ffui_tab_count(this); }
+	void	text(uint i, const char *sz) { ffui_tab_text_set(this, i, sz); }
 };
 
 struct ffui_statusbarxx : ffui_statusbar {

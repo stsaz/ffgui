@@ -100,3 +100,9 @@ static inline ffbool ffui_tab_get(ffui_tab *t, int idx, ffui_tabitem *it) {
 	ffui_tab_reset(it);
 	return r;
 }
+
+static inline void ffui_tab_text_set(ffui_tab *t, uint i, const char *sz) {
+	ffui_tabitem ti = {};
+	ffui_tab_settextz(&ti, sz);
+	ffui_tab_set(t, i, &ti);
+}
