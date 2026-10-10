@@ -75,6 +75,7 @@ static void ctl_place(ffui_ctl *ctl, ffui_loader *g)
 }
 
 static int ctl_size(ffui_loader *g, ffint64 val) { return 0; }
+static int ctl_resize(ffui_loader *g, ffstr val) { return 0; }
 static int ctl_tooltip(ffui_loader *g, ffstr val) { return 0; }
 
 // ICON
@@ -503,6 +504,7 @@ static int text_done(ffui_loader *g)
 	return 0;
 }
 static const ffconf_arg text_args[] = {
+	{ "resize",	T_STRLIST,	_F(ctl_resize) }, // compat
 	{ "style",	T_STRLIST,	_F(btn_style) },
 	{ NULL,		T_CLOSE,	_F(text_done) },
 };
@@ -557,6 +559,7 @@ static int trkbar_done(ffui_loader *g)
 static const ffconf_arg trkbar_args[] = {
 	{ "page_size",	T_INT32,	_F(trkbar_pagesize) }, // compat
 	{ "range",		T_INT32,	_F(trkbar_range) },
+	{ "resize",		T_STRLIST,	_F(ctl_resize) }, // compat
 	{ "scroll",		T_STR,		_F(trkbar_onscroll) },
 	{ "scrolling",	T_STR,		_F(trkbar_onscroll) }, // compat
 	{ "size",		T_INTLIST,	_F(ctl_size) }, // compat
@@ -587,6 +590,7 @@ static int tab_onchange(ffui_loader *g, ffstr val)
 }
 static const ffconf_arg tab_args[] = {
 	{ "onchange",	T_STR,	_F(tab_onchange) },
+	{ "resize",		T_STRLIST,	_F(ctl_resize) }, // compat
 	{ "size",		T_INTLIST,	_F(ctl_size) }, // compat
 	{}
 };
@@ -689,6 +693,7 @@ static const ffconf_arg view_args[] = {
 	{ "column",		T_OBJS_ARG,	_F(viewcol_new) },
 	{ "double_click",T_STR,		_F(view_double_click) },
 	{ "popup_menu",	T_STR,		_F(view_popup_menu) },
+	{ "resize",		T_STRLIST,	_F(ctl_resize) }, // compat
 	{ "size",		T_INTLIST,	_F(ctl_size) }, // compat
 	{ "style",		T_STRLIST,	_F(view_style) },
 	{}
