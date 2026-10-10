@@ -38,6 +38,7 @@ typedef struct ffui_loader {
 	ffstr path, conf;
 	ffvec accels; //ffui_wnd_hotkey[]
 	uint conf_line, conf_col;
+	struct ffconf *ffc;
 	void *cs;
 
 	char language[2];
@@ -59,7 +60,7 @@ typedef struct ffui_loader {
 	ffui_menu *menu;
 	void *mi;
 	GtkWidget *hbox;
-	uint list_idx;
+	uint list_idx, list_line;
 	union {
 		ffui_button*	btn;
 		ffui_checkbox*	cb;

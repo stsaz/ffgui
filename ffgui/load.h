@@ -18,6 +18,7 @@ int ffui_ldr_load(ffui_loader *g, const char *window)
 	ffconf_scheme cs = {};
 	ffconf_scheme_addctx(&cs, top_args, g);
 	g->cs = &cs;
+	g->ffc = &c.lt;
 
 	ffstr val = {};
 	while (g->conf.len) {

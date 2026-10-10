@@ -27,6 +27,7 @@ enum {
 #define T_INTLIST_S  (FFCONF_TINT32 | FFCONF_FSIGN | FFCONF_FLIST)
 #define T_STR  FFCONF_TSTR
 #define T_STRMULTI  (FFCONF_TSTR | FFCONF_FMULTI)
+#define T_STRMULTILIST  (FFCONF_TSTR | FFCONF_FMULTI | FFCONF_FLIST)
 #define T_STRLIST  (FFCONF_TSTR | FFCONF_FLIST)
 #define FF_XSPACE  2
 #define FF_YSPACE  2
@@ -334,6 +335,12 @@ static const ffconf_arg menuitem_args[] = {
 };
 static int new_menuitem(ffui_loader *g, ffstr name)
 {
+	if (g->list_idx) {
+		// Previous compact item before this 'item/check_item'
+		g->list_idx = 0;
+		mi_done(g);
+	}
+
 	ffmem_zero_obj(&g->menuitem);
 
 	if (ffstr_eqcz(&name, "-"))
@@ -348,9 +355,48 @@ static int new_menuitem(ffui_loader *g, ffstr name)
 	return 0;
 }
 
+static int mi_item_args(ffui_loader *g, ffstr name) {
+	if (g->list_line != g->ffc->line
+		&& g->list_idx) {
+		g->list_idx = 0; // New line -- new item
+		mi_done(g);
+	}
+
+	switch (g->list_idx++) {
+	case 0: {
+		g->list_line = g->ffc->line;
+		ffmem_zero_obj(&g->menuitem);
+		if (ffstr_eqcz(&name, "-")) {
+			ffui_menu_settype(&g->menuitem.mi, FFUI_MENU_SEPARATOR);
+			break;
+		}
+		ffstr s = vars_val(&g->vars, name);
+		ffui_menu_settextstr(&g->menuitem.mi, &s);
+		break;
+	}
+	case 1:
+		mi_action(g, name);  break;
+	case 2:
+		mi_hotkey(g, name);  break;
+	case 3:
+		return FFUI_EINVAL;
+	}
+	return 0;
+}
+static int menu_done(ffui_loader *g) {
+	if (g->list_idx) {
+		// Last compact item before menu block closes
+		g->list_idx = 0;
+		mi_done(g);
+	}
+	return 0;
+}
+
 static const ffconf_arg menu_args[] = {
+	{ "-",			T_STRMULTILIST,	_F(mi_item_args) }, // "- Text [Action] [Hotkey]"
 	{ "check_item",	T_OBJS_ARG,	_F(new_menuitem) },
 	{ "item",		T_OBJS_ARG,	_F(new_menuitem) },
+	{ NULL,			T_CLOSE,		_F(menu_done) },
 	{}
 };
 static int new_menu(ffui_loader *g, ffstr name)

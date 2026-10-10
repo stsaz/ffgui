@@ -17,6 +17,7 @@ enum {
 #define _F(x)  (ffsize)x
 #define T_STR  FFCONF_TSTR
 #define T_STRMULTI  (FFCONF_TSTR | FFCONF_FMULTI)
+#define T_STRMULTILIST  (FFCONF_TSTR | FFCONF_FMULTI | FFCONF_FLIST)
 #define T_CLOSE  FFCONF_TCLOSE
 #define T_OBJ  FFCONF_TOBJ
 #define T_OBJ_ARG  (FFCONF_TOBJ | FFCONF_FARG)
@@ -173,6 +174,12 @@ static const ffconf_arg mi_args[] = {
 
 static int mi_new(ffui_loader *g, ffstr name, unsigned check)
 {
+	if (g->list_idx) {
+		// Previous compact item before this 'item/check_item'
+		g->list_idx = 0;
+		mi_done(g);
+	}
+
 	if (ffstr_eqcz(&name, "-")) {
 		g->mi = ffui_menu_separator_new();
 	} else {
@@ -191,11 +198,50 @@ static int mi_new(ffui_loader *g, ffstr name, unsigned check)
 
 static int mi_new_check(ffui_loader *g, ffstr name) { return mi_new(g, name, 1); }
 static int mi_new_text(ffui_loader *g, ffstr name) { return mi_new(g, name, 0); }
+static int mi_item_args(ffui_loader *g, ffstr name) {
+	if (g->list_line != g->ffc->line
+		&& g->list_idx) {
+		g->list_idx = 0; // New line -- new item
+		mi_done(g);
+	}
+
+	switch (g->list_idx++) {
+	case 0: {
+		g->list_line = g->ffc->line;
+		if (ffstr_eqcz(&name, "-")) {
+			g->mi = ffui_menu_separator_new();
+			break;
+		}
+		ffstr s = vars_val(&g->vars, name);
+		char *sz = ffsz_dupstr(&s);
+		g->mi = ffui_menu_new(sz);
+		ffmem_free(sz);
+		break;
+	}
+	case 1:
+		mi_action(g, name);  break;
+	case 2:
+		mi_hotkey(g, name);  break;
+	case 3:
+		return FFUI_EINVAL;
+	}
+	return 0;
+}
+static int menu_done(ffui_loader *g) {
+	if (g->list_idx) {
+		// Last compact item before menu block closes
+		g->list_idx = 0;
+		mi_done(g);
+	}
+	return 0;
+}
 
 // MENU
 static const ffconf_arg menu_args[] = {
+	{ "-",			T_STRMULTILIST,	_F(mi_item_args) }, // "- Text [Action] [Hotkey]"
 	{ "check_item",	T_OBJS_ARG,	_F(mi_new_check) },
 	{ "item",		T_OBJS_ARG,	_F(mi_new_text) },
+	{ NULL,			T_CLOSE,	_F(menu_done) },
 	{}
 };
 
@@ -207,6 +253,7 @@ static int menu_new(ffui_loader *g, ffstr name)
 	if (0 != ffui_menu_create(g->menu))
 		return FFUI_ENOMEM;
 
+	g->list_idx = 0;
 	add_ctx(g, menu_args);
 	return 0;
 }
@@ -220,6 +267,7 @@ static int mmenu_new(ffui_loader *g, ffstr name)
 		return FFUI_ENOMEM;
 
 	ffui_wnd_setmenu(g->wnd, g->menu);
+	g->list_idx = 0;
 	add_ctx(g, menu_args);
 	return 0;
 }

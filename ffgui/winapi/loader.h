@@ -50,6 +50,7 @@ struct ffui_loader {
 	void *udata;
 	ffstr conf;
 	uint conf_line, conf_col;
+	struct ffconf *ffc;
 	void *cs;
 
 	char language[2];
@@ -96,7 +97,7 @@ struct ffui_loader {
 	char *wnd_name;
 	uint wnd_show_code;
 	uint resize_flags;
-	uint list_idx;
+	uint list_idx, list_line;
 	uint paned_idx;
 	ushort edge_right, edge_bottom;
 	uint wnd_visible :1;
