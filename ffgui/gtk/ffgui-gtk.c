@@ -817,6 +817,12 @@ static gboolean _ffui_send_handler(gpointer data)
 	case FFUI_TAB_COUNT:
 		*(ffsize*)c->udata = ffui_tab_count((ffui_tab*)c->ctl);  break;
 
+	case FFUI_TAB_SETTEXT: {
+		const struct ffui_tab_text_set_data *d = c->udata;
+		ffui_tab_text_set((ffui_tab*)c->ctl, d->i, d->sz);
+		break;
+	}
+
 
 	case FFUI_CLIP_SETTEXT: {
 		GtkClipboard *clip = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);

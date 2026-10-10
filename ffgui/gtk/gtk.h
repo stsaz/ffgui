@@ -112,6 +112,7 @@ enum FFUI_MSG {
 	FFUI_TAB_INS,
 	FFUI_TAB_DEL,
 	FFUI_TAB_SETACTIVE,
+	FFUI_TAB_SETTEXT,
 	FFUI_CTL_ENABLE,
 	FFUI_TRK_SET,
 	FFUI_TRK_SETRANGE,
@@ -196,6 +197,11 @@ static inline int ffui_send_tab_count(ffui_tab *ctl) {
 	ffsize n;
 	ffui_send(ctl, FFUI_TAB_COUNT, &n);
 	return n;
+}
+struct ffui_tab_text_set_data { uint i; const char *sz; };
+static inline void ffui_send_tab_text_set(ffui_tab *t, uint i, const char *sz) {
+	struct ffui_tab_text_set_data d = {i, sz};
+	ffui_send(t, FFUI_TAB_SETTEXT, &d);
 }
 
 #define ffui_send_status_settextz(sb, sz)  ffui_send(sb, FFUI_STBAR_SETTEXT, (void*)sz)

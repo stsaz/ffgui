@@ -106,3 +106,4 @@ static inline void ffui_tab_text_set(ffui_tab *t, uint i, const char *sz) {
 	ffui_tab_settextz(&ti, sz);
 	ffui_tab_set(t, i, &ti);
 }
+#define ffui_send_tab_text_set(t, i, sz)  ffui_tab_text_set(t, i, sz)
