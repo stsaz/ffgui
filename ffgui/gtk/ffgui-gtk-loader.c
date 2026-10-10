@@ -225,6 +225,47 @@ static int mmenu_new(ffui_loader *g, ffstr name)
 }
 
 
+static int font_name(ffui_loader *g, ffstr val)
+{
+	if (FF_COUNT(g->fnt.name) == ffsz_copystr(g->fnt.name, FF_COUNT(g->fnt.name), &val))
+		return FFUI_EINVAL;
+	return 0;
+}
+static int font_height(ffui_loader *g, ffint64 val)
+{
+	g->fnt.height = val;
+	return 0;
+}
+static int font_style(ffui_loader *g, ffstr val)
+{
+	if (ffstr_eqcz(&val, "bold"))
+		g->fnt.bold = 1;
+	else if (ffstr_eqcz(&val, "italic"))
+		g->fnt.italic = 1;
+	else if (ffstr_eqcz(&val, "underline"))
+		g->fnt.underline = 1;
+	else
+		return FFUI_EINVAL;
+	return 0;
+}
+static int font_done(ffui_loader *g)
+{
+	return (!ffui_font_apply(&g->fnt, g->ctl)) ? 0 : FFUI_EINVAL;
+}
+static const ffconf_arg lbl_font_args[] = {
+	{ "height",	T_INT32,	_F(font_height) },
+	{ "name",	T_STR,		_F(font_name) },
+	{ "style",	T_STRLIST,	_F(font_style) },
+	{ NULL,		T_CLOSE,	_F(font_done) },
+};
+static int font_new(ffui_loader *g)
+{
+	ffmem_zero_obj(&g->fnt);
+	add_ctx(g, lbl_font_args);
+	return 0;
+}
+
+
 // LABEL
 static int lbl_style(ffui_loader *g, ffstr val)
 {
@@ -246,6 +287,7 @@ static int lbl_done(ffui_loader *g)
 	return 0;
 }
 static const ffconf_arg lbl_args[] = {
+	{ "font",	T_OBJ,		_F(font_new) },
 	{ "size",	T_INTLIST,	_F(ctl_size) }, // compat
 	{ "style",	T_STRLIST,	_F(lbl_style) },
 	{ "text",	T_STR,		_F(lbl_text) },

@@ -31,6 +31,32 @@ void ffui_run()
 	gtk_main();
 }
 
+int ffui_font_apply(const ffui_font *f, ffui_ctl *c)
+{
+	char s[256];
+	uint i = _ffs_copycz(s, sizeof(s), "* { ");
+	if (f->name[0])
+		i += ffs_format_r0(s + i, sizeof(s) - i, "font-family: \"%s\"; ", f->name);
+	if (f->height)
+		i += ffs_format_r0(s + i, sizeof(s) - i, "font-size: %upt; ", f->height);
+	i += _ffs_copyz(s + i, sizeof(s) - i,
+		(f->bold) ? "font-weight: bold; "
+		: (f->italic) ? "font-style: italic; "
+		: (f->underline) ? "text-decoration: underline; "
+		: ""
+		);
+	i += _ffs_copycz(s + i, sizeof(s) - i, "}");
+	if (i == sizeof(s))
+		return -1;
+	s[i] = '\0';
+
+	GtkCssProvider *cp = gtk_css_provider_new();
+	gtk_css_provider_load_from_data(cp, s, -1, NULL);
+	gtk_style_context_add_provider(gtk_widget_get_style_context(c->h), GTK_STYLE_PROVIDER(cp), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	g_object_unref(cp);
+	return 0;
+}
+
 #define sig_disable(h, func, udata) \
 	g_signal_handlers_disconnect_matched(h, G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA, 0, 0, 0, G_CALLBACK(func), udata)
 

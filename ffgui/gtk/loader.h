@@ -52,7 +52,10 @@ typedef struct ffui_loader {
 
 	// Everything below is memzero'ed for each new window
 	ffui_window *wnd;
-	ffui_viewcol vicol;
+	union {
+		ffui_viewcol vicol;
+		ffui_font fnt;
+	};
 	ffui_menu *menu;
 	void *mi;
 	GtkWidget *hbox;

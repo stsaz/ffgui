@@ -83,6 +83,20 @@ static inline void ffui_show(void *c, uint show) {
 #define ffui_setposrect(ctl, r) \
 	gtk_widget_set_size_request((ctl)->h, (r)->cx, (r)->cy)
 
+
+// FONT
+typedef struct ffui_font ffui_font;
+struct ffui_font {
+	char name[56];
+	uint height;
+	uint bold :1;
+	uint italic :1;
+	uint underline :1;
+};
+
+FF_EXTERN int ffui_font_apply(const ffui_font *f, ffui_ctl *c);
+
+
 // MESSAGE LOOP
 FF_EXTERN void ffui_run();
 
