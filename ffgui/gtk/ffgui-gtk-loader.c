@@ -314,6 +314,12 @@ static int btn_action(ffui_loader *g, ffstr val)
 		return FFUI_EINVAL;
 	return 0;
 }
+static int btn_default(ffui_loader *g, ffint64 val)
+{
+	if (val)
+		ffui_wnd_default(g->wnd, g->btn->h);
+	return 0;
+}
 static int btn_done(ffui_loader *g)
 {
 	ctl_place(g->ctl, g);
@@ -325,6 +331,7 @@ static int btn_done(ffui_loader *g)
 }
 static const ffconf_arg btn_args[] = {
 	{ "action",	T_STR,		_F(btn_action) },
+	{ "default",T_INT32,	_F(btn_default) },
 	{ "icon",	T_OBJ,		_F(icon_new) },
 	{ "size",	T_INTLIST,	_F(ctl_size) }, // compat
 	{ "style",	T_STRLIST,	_F(btn_style) },
@@ -426,6 +433,9 @@ static int edit_done(ffui_loader *g)
 	if (g->f_edit_fixed)
 		gtk_widget_set_halign(g->ctl->h, GTK_ALIGN_START);
 	ctl_place_f(g, g->ctl, flags);
+
+	if (g->activates_default)
+		gtk_entry_set_activates_default(GTK_ENTRY(g->ctl->h), 1);
 	return 0;
 }
 static int edit_text(ffui_loader *g, ffstr val)

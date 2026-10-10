@@ -42,6 +42,7 @@ struct ffui_window {
 
 	ushort onclose_id;
 	ushort onminimize_id, onmaximize_id, onactivate_id;
+	ushort default_action;
 
 	const struct ffui_wnd_keymap *keymap; // Key-to-action mapping
 	uint keymap_n;

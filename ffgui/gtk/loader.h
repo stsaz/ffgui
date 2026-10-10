@@ -44,9 +44,13 @@ typedef struct ffui_loader {
 	ffvec lang_data_def, lang_data;
 	ffmap vars; // hash(name) -> struct guivar*
 
+	uint activates_default :1; // Make all edit-controls activate the window's default action on Enter
+
 	_ffui_ldr_icon ico;
 	_ffui_ldr_icon ico_ctl;
 	ffui_pos r;
+
+	// Everything below is memzero'ed for each new window
 	ffui_window *wnd;
 	ffui_viewcol vicol;
 	ffui_menu *menu;

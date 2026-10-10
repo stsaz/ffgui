@@ -1472,7 +1472,9 @@ static LRESULT __stdcall wnd_proc(HWND h, uint msg, WPARAM w, LPARAM l)
 		if (l == 0) { //menu
 			/* HIWORD(w): 0 - msg sent by menu. 1 - msg sent by hot key */
 			id = LOWORD(w);
-			if (id == IDCANCEL && wnd->popup) {
+			if (id == IDOK && wnd->default_action) {
+				id = wnd->default_action;
+			} else if (id == IDCANCEL && wnd->popup) {
 				// Auto-close the popup window on Escape key press
 				wnd->on_action(wnd, wnd->onclose_id);
 				if (wnd->hide_on_close) {

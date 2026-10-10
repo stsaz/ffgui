@@ -61,6 +61,7 @@ struct ffui_loader {
 
 	uint dark_theme :1;
 	uint dark_theme_wnd_manual :1;
+	uint activates_default :1; // no-op
 
 	ffvec paned_array; // ffui_paned*[].  User must free the controls and vector manually.
 	ffvec accels; //ffui_wnd_hotkey[]

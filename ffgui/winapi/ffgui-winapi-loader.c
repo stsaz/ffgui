@@ -796,6 +796,15 @@ static int btn_action(ffui_loader *g, ffstr val)
 		return FFUI_EINVAL;
 	return 0;
 }
+static int btn_default(ffui_loader *g, ffint64 val)
+{
+	if (val) {
+		_ffui_style_set(g->actl.ctl, BS_DEFPUSHBUTTON);
+		SetWindowPos(g->actl.ctl->h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		g->wnd->default_action = g->actl.btn->action_id;
+	}
+	return 0;
+}
 static int btn_done(ffui_loader *g)
 {
 	if (g->ico_ctl.icon.h != NULL)
@@ -806,6 +815,7 @@ static int btn_done(ffui_loader *g)
 }
 static const ffconf_arg btn_args[] = {
 	{ "action",		T_STR,		_F(btn_action) },
+	{ "default",	T_INT32,	_F(btn_default) },
 	{ "font",		T_OBJ,		_F(label_font) },
 	{ "icon",		T_OBJ,		_F(image_icon) },
 	{ "position",	T_INTLIST_S,_F(ctl_pos) },

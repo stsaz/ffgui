@@ -95,3 +95,8 @@ static inline void ffui_wnd_setplacement(ffui_window *w, uint showcmd, const ffu
 	gtk_window_move(w->h, pos->x, pos->y);
 	gtk_window_set_default_size(w->h, pos->cx, pos->cy);
 }
+
+static inline void ffui_wnd_default(ffui_window *w, GtkWidget *h) {
+	gtk_widget_set_can_default(h, TRUE);
+	gtk_window_set_default(GTK_WINDOW(w->h), h);
+}
