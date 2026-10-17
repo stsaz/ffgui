@@ -507,33 +507,19 @@ static int new_pgsbar(ffui_loader *g, ffstr name)
 }
 
 
-static int stbar_style(ffui_loader *g, ffstr val)
-{
-	return 0;
-}
 static int stbar_parts(ffui_loader *g, ffint64 val)
 {
-	int *it = ffvec_pushT(&g->sb_parts, int);
-	if (it == NULL)
-		return FFUI_ENOMEM;
-	*it = (int)val;
+	g->stbar_parts = val;
 	return 0;
 }
 static int stbar_done(ffui_loader *g)
 {
-	if (g->sb_parts.len) {
-		ffui_status_setparts(g->actl.ctl, g->sb_parts.len, g->sb_parts.ptr);
-	} else {
-		int p0 = -1;
-		ffui_status_setparts(g->actl.ctl, 1, &p0);
-	}
-	ffvec_free(&g->sb_parts);
+	ffui_status_setparts(g->actl.sb, g->stbar_parts);
 	ffui_show(g->actl.ctl, 1);
 	return 0;
 }
 static const ffconf_arg stbar_args[] = {
-	{ "parts",		T_INTLIST_S,_F(stbar_parts) },
-	{ "style",		T_STRLIST,	_F(stbar_style) },
+	{ "parts",		T_INT32,	_F(stbar_parts) },
 	{ NULL,			T_CLOSE,	_F(stbar_done) },
 };
 static int new_stbar(ffui_loader *g, ffstr name)
@@ -543,7 +529,7 @@ static int new_stbar(ffui_loader *g, ffstr name)
 
 	if (0 != ffui_status_create(g->actl.stbar, g->wnd))
 		return FFUI_ENOMEM;
-	ffvec_null(&g->sb_parts);
+	g->stbar_parts = 0;
 	state_reset(g);
 	add_ctx(g, stbar_args);
 	return 0;

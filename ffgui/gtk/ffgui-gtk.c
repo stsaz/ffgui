@@ -499,11 +499,26 @@ void ffui_view_setdata(ffui_view *v, uint first, int delta)
 
 // STATUSBAR
 
-int ffui_status_create(ffui_ctl *sb, ffui_window *parent)
+int ffui_status_create(ffui_statusbar *sb, ffui_window *parent)
 {
 	sb->h = gtk_statusbar_new();
 	gtk_box_pack_end(GTK_BOX(parent->vbox), sb->h, /*expand=*/0, /*fill=*/0, /*padding=*/0);
 	return 0;
+}
+
+void ffui_status_setparts(ffui_statusbar *sb, uint n)
+{
+	if (!n)
+		n = 1;
+	for (uint i = 0;  i < ffmin(n, FF_COUNT(sb->parts));  i++) {
+		sb->parts[i] = gtk_label_new("");
+		gtk_label_set_xalign(GTK_LABEL(sb->parts[i]), 0);
+	}
+
+	GtkWidget *area = gtk_statusbar_get_message_area(GTK_STATUSBAR(sb->h));
+	gtk_box_pack_start(GTK_BOX(area), sb->parts[0], /*expand=*/ 1, /*fill=*/ 1, /*padding=*/ 0);
+	if (n == 2)
+		gtk_box_pack_end(GTK_BOX(area), sb->parts[1], /*expand=*/ 0, /*fill=*/ 0, /*padding=*/ 0);
 }
 
 
@@ -846,9 +861,6 @@ static gboolean _ffui_send_handler(gpointer data)
 	case FFUI_EDIT_SETTEXT:
 		ffui_edit_settextstr((ffui_edit*)c->ctl, (ffstr*)c->udata);  break;
 
-	case FFUI_STBAR_SETTEXT:
-		ffui_status_settextz((ffui_ctl*)c->ctl, c->udata);  break;
-
 
 	case FFUI_TEXT_GETTEXT:
 		*(ffstr*)c->udata = ffui_text_text((ffui_text*)c->ctl);  break;
@@ -926,8 +938,15 @@ static gboolean _ffui_send_handler(gpointer data)
 		*(ffsize*)c->udata = ffui_tab_count((ffui_tab*)c->ctl);  break;
 
 	case FFUI_TAB_SETTEXT: {
-		const struct ffui_tab_text_set_data *d = c->udata;
+		const struct _ffui_itext_data *d = c->udata;
 		ffui_tab_text_set((ffui_tab*)c->ctl, d->i, d->sz);
+		break;
+	}
+
+
+	case FFUI_STBAR_SETTEXT: {
+		const struct _ffui_itext_data *d = c->udata;
+		ffui_status_settextz((ffui_statusbar*)c->ctl, d->i, d->sz);
 		break;
 	}
 

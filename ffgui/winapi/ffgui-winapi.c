@@ -431,6 +431,20 @@ int ffui_status_create(ffui_statusbar *c, ffui_window *parent)
 	return 0;
 }
 
+static void ffui_status_size(ffui_statusbar *sb, uint width)
+{
+	uint n = SendMessageW(sb->h, SB_GETPARTS, 0, 0);
+	if (n == 2) {
+		// Resize the left part keeping the width of the right part
+		int p[2];
+		SendMessageW(sb->h, SB_GETPARTS, n, (LPARAM)p);
+		uint cx1 = p[1] - p[0];
+		p[0] = ffmax((int)(width - cx1), 10);
+		p[1] = width;
+		SendMessageW(sb->h, SB_SETPARTS, n, (LPARAM)p);
+	}
+	SendMessageW(sb->h, WM_SIZE, 0, 0);
+}
 
 
 int ffui_img_create(ffui_image *im, ffui_window *parent)
@@ -1642,8 +1656,8 @@ apply_theme:
 			paned_resize(p, wnd, rect);
 		}
 
-		if (wnd->stbar != NULL)
-			SendMessageW(wnd->stbar->h, WM_SIZE, 0, 0);
+		if (wnd->stbar)
+			ffui_status_size(wnd->stbar, rect.right);
 		break;
 
 	case WM_WINDOWPOSCHANGING:

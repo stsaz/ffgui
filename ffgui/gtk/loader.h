@@ -56,6 +56,7 @@ typedef struct ffui_loader {
 	union {
 		ffui_viewcol vicol;
 		ffui_font fnt;
+		uint stbar_parts;
 	};
 	ffui_menu *menu;
 	void *mi;
@@ -75,6 +76,7 @@ typedef struct ffui_loader {
 		ffui_trackbar*	trkbar;
 		ffui_trayicon*	trayicon;
 		ffui_view*		view;
+		ffui_statusbar*	sb;
 	};
 
 	char *errstr;

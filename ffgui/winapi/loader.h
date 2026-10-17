@@ -83,7 +83,7 @@ struct ffui_loader {
 		} tr;
 		ffui_font fnt;
 		ffui_viewcol vicol;
-		ffvec sb_parts;
+		uint stbar_parts;
 	};
 	union {
 		ffui_dialog *dlg;

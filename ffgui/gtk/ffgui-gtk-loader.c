@@ -813,7 +813,17 @@ static int view_new(ffui_loader *g, ffstr name)
 
 
 // STATUSBAR
+static int stbar_parts(ffui_loader *g, ffint64 val) {
+	g->stbar_parts = val;
+	return 0;
+}
+static int stbar_done(ffui_loader *g) {
+	ffui_status_setparts(g->sb, g->stbar_parts);
+	return 0;
+}
 static const ffconf_arg stbar_args[] = {
+	{ "parts",	T_INT32,	_F(stbar_parts) },
+	{ NULL,		T_CLOSE,		_F(stbar_done) },
 	{}
 };
 static int stbar_new(ffui_loader *g, ffstr name)
@@ -821,9 +831,10 @@ static int stbar_new(ffui_loader *g, ffstr name)
 	if (!(g->ctl = ldr_getctl(g, name)))
 		return FFUI_EINVAL;
 
-	if (0 != ffui_status_create(g->ctl, g->wnd))
+	if (0 != ffui_status_create(g->sb, g->wnd))
 		return FFUI_ENOMEM;
 
+	g->stbar_parts = 0;
 	add_ctx(g, stbar_args);
 	return 0;
 }

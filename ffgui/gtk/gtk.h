@@ -107,6 +107,7 @@ typedef void (*ffui_handler)(void *param);
 FF_EXTERN void ffui_thd_post(ffui_handler func, void *udata);
 
 typedef struct ffui_tab ffui_tab;
+typedef struct ffui_statusbar ffui_statusbar;
 
 enum FFUI_MSG {
 	FFUI_QUITLOOP,
@@ -212,10 +213,13 @@ static inline int ffui_send_tab_count(ffui_tab *ctl) {
 	ffui_send(ctl, FFUI_TAB_COUNT, &n);
 	return n;
 }
-struct ffui_tab_text_set_data { uint i; const char *sz; };
+struct _ffui_itext_data { uint i; const char *sz; };
 static inline void ffui_send_tab_text_set(ffui_tab *t, uint i, const char *sz) {
-	struct ffui_tab_text_set_data d = {i, sz};
+	struct _ffui_itext_data d = {i, sz};
 	ffui_send(t, FFUI_TAB_SETTEXT, &d);
 }
 
-#define ffui_send_status_settextz(sb, sz)  ffui_send(sb, FFUI_STBAR_SETTEXT, (void*)sz)
+static inline void ffui_send_status_settextz(ffui_statusbar *sb, uint i, const char *sz) {
+	struct _ffui_itext_data d = {i, sz};
+	ffui_send(sb, FFUI_STBAR_SETTEXT, &d);
+}

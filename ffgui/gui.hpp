@@ -84,10 +84,6 @@ struct ffui_tabxx : ffui_tab {
 	void	text(uint i, const char *sz) { ffui_send_tab_text_set(this, i, sz); }
 };
 
-struct ffui_statusbarxx : ffui_statusbar {
-	void	text(const char *sz) { ffui_send_status_settextz(this, sz); }
-};
-
 struct ffui_trayiconxx : ffui_trayicon {
 	void show(bool val) { ffui_tray_show(this, val); }
 };
@@ -150,6 +146,10 @@ struct ffui_viewxx : ffui_view {
 #ifdef FF_LINUX
 	void	drag_drop_init(uint action_id) { ffui_view_dragdrop(this, action_id); }
 #endif
+};
+
+struct ffui_statusbarxx : ffui_statusbar {
+	void	text(uint i, const char *sz) { ffui_send_status_settextz(this, i, sz); }
 };
 
 struct ffui_windowxx : ffui_window {

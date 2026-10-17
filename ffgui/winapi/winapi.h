@@ -392,6 +392,7 @@ union ffui_anyctl {
 	ffui_tab*		tab;
 	ffui_trackbar*	trkbar;
 	ffui_view*		view;
+	ffui_statusbar*	sb;
 };
 
 
