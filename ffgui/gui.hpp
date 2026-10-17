@@ -122,6 +122,12 @@ struct ffui_viewxx : ffui_view {
 		ffui_view_settextstr(&vi, &text);
 		ffui_view_set(this, col, &vi);
 	}
+	void	check(uint idx, bool check) {
+		ffui_viewitem vi = {};
+		ffui_view_setindex(&vi, idx);
+		ffui_view_check(&vi, check);
+		ffui_view_set(this, 0, &vi);
+	}
 	void	update(uint first, int delta) { ffui_post_view_setdata(this, first, delta); }
 	void	length(uint n, bool redraw) { ffui_view_setcount(this, n, redraw); }
 	void	clear() { ffui_post_view_clear(this); }
@@ -131,6 +137,8 @@ struct ffui_viewxx : ffui_view {
 	int		selected_first() { return ffui_view_selected_first(this); }
 	void	select(uint pos) { ffui_post_view_select_single(this, pos); }
 	void	select_all() { ffui_post_view_select_single(this, ~0U); }
+
+	ffslice	checked() { return ffui_view_checked(this); }
 
 	ffui_viewcolxx& column(int pos, ffui_viewcolxx *vc) { ffui_view_col(this, pos, &vc->vc); return *vc; }
 	void	column(uint pos, ffui_viewcolxx &vc) { ffui_view_setcol(this, pos, &vc.vc); }

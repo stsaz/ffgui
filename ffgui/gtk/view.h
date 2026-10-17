@@ -25,7 +25,7 @@ struct ffui_view {
 	enum FFUI_UID uid;
 	ffui_window *wnd;
 	GtkTreeModel *store;
-	GtkCellRenderer *rend;
+	GtkCellRenderer *rend, *render_check;
 	ushort dblclick_id;
 	ushort dropfile_id;
 	ushort dispinfo_id;
@@ -51,40 +51,24 @@ typedef struct ffui_viewcol ffui_viewcol;
 struct ffui_viewcol {
 	char *text;
 	uint width;
+	uint checkbox :1;
 };
 
 #define ffui_viewcol_reset(vc) \
 do { \
 	ffmem_free((vc)->text); \
-	(vc)->text = NULL; \
+	ffmem_zero_obj(vc); \
 } while (0)
 
 static inline void ffui_viewcol_settext(ffui_viewcol *vc, const char *text, ffsize len) {
 	vc->text = ffsz_dupn(text, len);
 }
 
+#define ffui_viewcol_checkbox(vc)  (vc)->checkbox = 1
 #define ffui_viewcol_setwidth(vc, w)  (vc)->width = (w)
 #define ffui_viewcol_width(vc)  ((vc)->width)
 
-static inline void ffui_view_inscol(ffui_view *v, int pos, ffui_viewcol *vc) {
-	_ffui_log("pos:%d", pos);
-	FF_ASSERT(v->store == NULL);
-
-	if (pos == -1)
-		pos = gtk_tree_view_get_n_columns(GTK_TREE_VIEW(v->h));
-
-	GtkTreeViewColumn *col = gtk_tree_view_column_new();
-	gtk_tree_view_column_set_title(col, vc->text);
-	gtk_tree_view_column_set_resizable(col, 1);
-	if (vc->width != 0)
-		gtk_tree_view_column_set_fixed_width(col, vc->width);
-
-	gtk_tree_view_column_pack_start(col, v->rend, 1);
-	gtk_tree_view_column_add_attribute(col, v->rend, "text", pos);
-
-	gtk_tree_view_insert_column(GTK_TREE_VIEW(v->h), col, pos);
-	ffui_viewcol_reset(vc);
-}
+FF_EXTERN void ffui_view_inscol(ffui_view *v, int pos, ffui_viewcol *vc);
 
 static inline void ffui_view_setcol(ffui_view *v, int pos, const ffui_viewcol *vc) {
 	GtkTreeViewColumn *col = gtk_tree_view_get_column(GTK_TREE_VIEW(v->h), pos);
@@ -109,6 +93,7 @@ typedef struct ffui_viewitem {
 	char *text;
 	int idx;
 	uint text_alloc :1;
+	uint checked :2;
 } ffui_viewitem;
 
 static inline void ffui_view_iteminit(ffui_viewitem *it) {
@@ -123,6 +108,8 @@ static inline void ffui_view_itemreset(ffui_viewitem *it) {
 }
 
 #define ffui_view_setindex(it, i)  (it)->idx = (i)
+
+#define ffui_view_check(it, _checked)  ((it)->checked = (_checked) + 1)
 
 #define ffui_view_settextz(it, sz)  (it)->text = (char*)(sz)
 static inline void ffui_view_settext(ffui_viewitem *it, const char *text, ffsize len) {
@@ -265,6 +252,10 @@ static inline int ffui_view_focused(ffui_view *v) {
 	return i[0];
 }
 
+/** Get array of checked items.
+Return uint[]; free with ffslice_free(). */
+FF_EXTERN ffslice ffui_view_checked(ffui_view *v);
+
 FF_EXTERN int ffui_view_ins(ffui_view *v, int pos, ffui_viewitem *it);
 
 #define ffui_view_append(v, it)  ffui_view_ins(v, -1, it)
@@ -272,8 +263,12 @@ FF_EXTERN int ffui_view_ins(ffui_view *v, int pos, ffui_viewitem *it);
 static inline void ffui_view_set(ffui_view *v, int sub, ffui_viewitem *it) {
 	_ffui_log("sub:%d '%s'", sub, it->text);
 	GtkTreeIter iter;
-	if (gtk_tree_model_iter_nth_child(GTK_TREE_MODEL(v->store), &iter, NULL, it->idx))
-		gtk_list_store_set(GTK_LIST_STORE(v->store), &iter, sub, it->text, -1);
+	if (gtk_tree_model_iter_nth_child(GTK_TREE_MODEL(v->store), &iter, NULL, it->idx)) {
+		if (it->checked)
+			gtk_list_store_set(GTK_LIST_STORE(v->store), &iter, sub, it->checked - 1, -1);
+		if (it->text)
+			gtk_list_store_set(GTK_LIST_STORE(v->store), &iter, sub, it->text, -1);
+	}
 	ffui_view_itemreset(it);
 }
 

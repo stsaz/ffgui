@@ -280,12 +280,59 @@ int ffui_view_create(ffui_view *v, ffui_window *parent)
 	return 0;
 }
 
+static void _ffui_view_checkbox_toggled(GtkCellRendererToggle *renderer, gchar *path, gpointer udata)
+{
+	ffui_view *v = udata;
+	GtkTreeModel *model = GTK_TREE_MODEL(v->store);
+	GtkTreeIter iter;
+	gboolean checked;
+	if (gtk_tree_model_get_iter_from_string(model, &iter, path)) {
+		gtk_tree_model_get(model, &iter, 0, &checked, -1);
+		gtk_list_store_set(GTK_LIST_STORE(model), &iter, 0, !checked, -1);
+	}
+}
+
+void ffui_view_inscol(ffui_view *v, int pos, ffui_viewcol *vc)
+{
+	_ffui_log("pos:%d", pos);
+	FF_ASSERT(v->store == NULL);
+
+	if (pos == -1)
+		pos = gtk_tree_view_get_n_columns(GTK_TREE_VIEW(v->h));
+
+	if (vc->checkbox) {
+		if (!v->render_check) {
+			v->render_check = gtk_cell_renderer_toggle_new();
+			g_signal_connect(v->render_check, "toggled", G_CALLBACK(_ffui_view_checkbox_toggled), v);
+		}
+		GtkTreeViewColumn *col = gtk_tree_view_column_new_with_attributes("", v->render_check, "active", pos, NULL);
+		gtk_tree_view_insert_column(GTK_TREE_VIEW(v->h), col, pos);
+		ffui_viewcol_reset(vc);
+		return;
+	}
+
+	GtkTreeViewColumn *col = gtk_tree_view_column_new();
+	gtk_tree_view_column_set_title(col, vc->text);
+	gtk_tree_view_column_set_resizable(col, 1);
+	if (vc->width != 0)
+		gtk_tree_view_column_set_fixed_width(col, vc->width);
+
+	gtk_tree_view_column_pack_start(col, v->rend, 1);
+	gtk_tree_view_column_add_attribute(col, v->rend, "text", pos);
+
+	gtk_tree_view_insert_column(GTK_TREE_VIEW(v->h), col, pos);
+	ffui_viewcol_reset(vc);
+}
+
 static void view_prepare(ffui_view *v)
 {
 	uint ncol = gtk_tree_view_get_n_columns(GTK_TREE_VIEW(v->h));
 	GType *types = ffmem_alloc(ncol * sizeof(GType));
 	for (uint i = 0;  i != ncol;  i++) {
-		types[i] = G_TYPE_STRING;
+		if (v->render_check && i == 0)
+			types[i] = G_TYPE_BOOLEAN;
+		else
+			types[i] = G_TYPE_STRING;
 	}
 	v->store = (void*)gtk_list_store_newv(ncol, types);
 	ffmem_free(types);
@@ -306,6 +353,32 @@ void ffui_view_dragdrop(ffui_view *v, uint action_id)
 	v->dropfile_id = action_id;
 }
 
+ffslice ffui_view_checked(ffui_view *v)
+{
+	ffslice a = {};
+	if (!v->store || !v->render_check)
+		return a;
+
+	GtkTreeModel *model = GTK_TREE_MODEL(v->store);
+	uint n = gtk_tree_model_iter_n_children(model, NULL);
+	if ((int)n <= 0)
+		return a;
+
+	if (!ffslice_allocT(&a, n, uint))
+		return a;
+
+	GtkTreeIter it;
+	gboolean active;
+	for (uint i = 0;  i < n;  i++) {
+		if (!gtk_tree_model_iter_nth_child(model, &it, NULL, i))
+			continue;
+		gtk_tree_model_get(model, &it, 0, &active, -1);
+		if (active)
+			*ffslice_pushT(&a, n, uint) = i;
+	}
+	return a;
+}
+
 int ffui_view_ins(ffui_view *v, int pos, ffui_viewitem *it)
 {
 	_ffui_log("pos:%d", pos);
@@ -320,7 +393,16 @@ int ffui_view_ins(ffui_view *v, int pos, ffui_viewitem *it)
 		it->idx = pos;
 		gtk_list_store_insert(GTK_LIST_STORE(v->store), &iter, pos);
 	}
-	gtk_list_store_set(GTK_LIST_STORE(v->store), &iter, 0, it->text, -1);
+
+	if (v->render_check) {
+		gtk_list_store_set(GTK_LIST_STORE(v->store), &iter
+			, 0, it->checked
+			, 1, it->text
+			, -1);
+	} else {
+		gtk_list_store_set(GTK_LIST_STORE(v->store), &iter, 0, it->text, -1);
+	}
+
 	ffui_view_itemreset(it);
 	return it->idx;
 }

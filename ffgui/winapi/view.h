@@ -279,7 +279,7 @@ do { \
 	(it)->item.state |= (checked) ? _FFUI_VIEW_CHECKED : _FFUI_VIEW_UNCHECKED; \
 } while (0)
 
-#define ffui_view_checked(it)  (((it)->item.state & LVIS_STATEIMAGEMASK) == _FFUI_VIEW_CHECKED)
+#define ffui_viewitem_checked(it)  (((it)->item.state & LVIS_STATEIMAGEMASK) == _FFUI_VIEW_CHECKED)
 
 #define ffui_view_focus(it, focus) \
 do { \
@@ -428,6 +428,22 @@ static inline void ffui_post_view_select_single(ffui_view *v, uint pos) {
 #define ffui_view_selall(v)  ffui_view_select(v, -1)
 #define ffui_view_unselall(v)  ffui_view_unsel(v, -1)
 FF_EXTERN int ffui_view_sel_invert(ffui_view *v);
+
+/** Get array of checked items.
+Return uint[]; free with ffslice_free(). */
+static inline ffslice ffui_view_checked(ffui_view *v) {
+	ffslice a = {};
+	uint n = ListView_GetItemCount(v->h);
+	if ((int)n <= 0)
+		return a;
+	if (!ffslice_allocT(&a, n, uint))
+		return a;
+	for (uint i = 0;  i < n;  i++) {
+		if (ListView_GetCheckState(v->h, i))
+			*ffslice_pushT(&a, n, uint) = i;
+	}
+	return a;
+}
 
 /** Sort items by lParam (set by ffui_view_setparam()).
 'func': int __stdcall sort(LPARAM p1, LPARAM p2, LPARAM udata) */

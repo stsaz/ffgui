@@ -731,11 +731,13 @@ static int viewcol_new(ffui_loader *g, ffstr name)
 // VIEW
 
 enum {
+	VIEW_STYLE_CHECKBOXES,
 	VIEW_STYLE_EDITABLE,
 	VIEW_STYLE_GRID_LINES,
 	VIEW_STYLE_MULTI_SELECT,
 };
 static const char view_styles_sorted[][16] = {
+	"checkboxes",
 	"editable",
 	"grid_lines",
 	"multi_select",
@@ -744,6 +746,13 @@ static int view_style(ffui_loader *g, ffstr val)
 {
 	int n = ffcharr_ifind_sorted(view_styles_sorted, FF_COUNT(view_styles_sorted), sizeof(view_styles_sorted[0]), val.ptr, val.len);
 	switch (n) {
+	case VIEW_STYLE_CHECKBOXES: {
+		ffui_viewcol vc = {};
+		ffui_viewcol_checkbox(&vc);
+		ffui_view_inscol(g->view, -1, &vc);
+		// Note: all next column positions are off by 1 now.
+		break;
+	}
 
 	case VIEW_STYLE_GRID_LINES:
 		ffui_view_style(g->view, FFUI_VIEW_GRIDLINES, FFUI_VIEW_GRIDLINES);
