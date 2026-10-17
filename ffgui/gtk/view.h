@@ -52,6 +52,7 @@ struct ffui_viewcol {
 	char *text;
 	uint width;
 	uint checkbox :1;
+	uint show_hide :2;
 };
 
 #define ffui_viewcol_reset(vc) \
@@ -67,6 +68,7 @@ static inline void ffui_viewcol_settext(ffui_viewcol *vc, const char *text, ffsi
 #define ffui_viewcol_checkbox(vc)  (vc)->checkbox = 1
 #define ffui_viewcol_setwidth(vc, w)  (vc)->width = (w)
 #define ffui_viewcol_width(vc)  ((vc)->width)
+#define ffui_viewcol_show(vc, show)  ((vc)->show_hide = (show) + 1)
 
 FF_EXTERN void ffui_view_inscol(ffui_view *v, int pos, ffui_viewcol *vc);
 
@@ -76,6 +78,8 @@ static inline void ffui_view_setcol(ffui_view *v, int pos, const ffui_viewcol *v
 		gtk_tree_view_column_set_title(col, vc->text);
 	if (vc->width != 0)
 		gtk_tree_view_column_set_fixed_width(col, vc->width);
+	if (vc->show_hide)
+		gtk_tree_view_column_set_visible(col, vc->show_hide - 1);
 }
 
 static inline ffui_viewcol* ffui_view_col(ffui_view *v, int pos, ffui_viewcol *vc) {
