@@ -64,3 +64,8 @@ type: enum FFUI_EDIT_SCROLL */
 #define ffui_edit_scroll(e, type)  ffui_send((e)->h, EM_SCROLL, type, 0)
 
 FF_EXTERN uint ffui_edit_width(ffui_edit *e, uint n);
+
+static inline void ffui_edit_pos_set(ffui_edit *e, int pos) {
+	pos = (pos == -1) ? (int)SendMessageW(e->h, WM_GETTEXTLENGTH, 0, 0) : (pos);
+	SendMessageW(e->h, EM_SETSEL, (WPARAM)pos, (LPARAM)pos);
+}

@@ -111,6 +111,13 @@ void _ffui_edit_changed(GtkEditable *editable, gpointer udata)
 		e->wnd->on_action(e->wnd, e->change_id);
 }
 
+void ffui_edit_settextz(ffui_edit *e, const char *text)
+{
+	g_signal_handlers_block_by_func(e->h, G_CALLBACK(_ffui_edit_changed), e);
+	gtk_entry_set_text(GTK_ENTRY(e->h), text);
+	g_signal_handlers_unblock_by_func(e->h, G_CALLBACK(_ffui_edit_changed), e);
+}
+
 void _ffui_track_value_changed(GtkWidget *widget, gpointer udata)
 {
 	ffui_trackbar *t = udata;

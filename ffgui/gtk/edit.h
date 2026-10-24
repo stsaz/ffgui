@@ -15,7 +15,7 @@ static inline int ffui_edit_create(ffui_edit *e, ffui_window *parent) {
 	return 0;
 }
 
-#define ffui_edit_settextz(e, text)  gtk_entry_set_text(GTK_ENTRY((e)->h), text)
+FF_EXTERN void ffui_edit_settextz(ffui_edit *e, const char *text);
 static inline void ffui_edit_settext(ffui_edit *e, const char *text, ffsize len) {
 	if (len == 0) {
 		ffui_edit_settextz(e, "");
@@ -47,3 +47,6 @@ static inline ffstr ffui_edit_text(ffui_edit *e) {
 
 #define ffui_edit_selall(e) \
 	gtk_editable_select_region(GTK_EDITABLE((e)->h), 0, -1);
+
+#define ffui_edit_pos_set(e, pos) \
+	gtk_editable_set_position(GTK_EDITABLE((e)->h), pos)
