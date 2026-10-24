@@ -24,6 +24,18 @@ static inline int ffui_menu_create(ffui_menu *m) {
 	return (m->h == NULL);
 }
 
+static inline int ffui_menu_create_popup(ffui_menu *m, ffui_window *parent) {
+	m->h = gtk_menu_new();
+	m->wnd = parent;
+	g_object_set_data(G_OBJECT(m->h), "ffdata", m);
+	return (m->h == NULL);
+}
+
+static inline void ffui_menu_popup_under(ffui_menu *m, ffui_ctl *ctl) {
+	gtk_widget_show_all(m->h);
+	gtk_menu_popup_at_widget(GTK_MENU(m->h), ctl->h, GDK_GRAVITY_SOUTH_WEST, GDK_GRAVITY_NORTH_WEST, NULL);
+}
+
 static inline void ffui_menu_destroy(ffui_menu *m) {
 	if (!m) return;
 	ffvec_free(&m->items);
@@ -62,4 +74,10 @@ static inline void ffui_menu_check(ffui_menu *m, uint id, int check) {
 			break;
 		}
 	}
+}
+
+static inline void ffui_menu_itemadd(ffui_menu *m, const char *text, uint action_id) {
+	GtkWidget *mi = gtk_menu_item_new_with_label(text);
+	g_signal_connect(mi, "activate", (GCallback)_ffui_menu_activate, (void*)(size_t)action_id);
+	gtk_menu_shell_insert(GTK_MENU_SHELL(m->h), mi, -1);
 }

@@ -16,8 +16,19 @@ static inline int ffui_menu_create(ffui_menu *m) {
 	return 0 == (m->h = CreatePopupMenu());
 }
 
+static inline int ffui_menu_create_popup(ffui_menu *m, ffui_window *parent) {
+	(void)parent;
+	return !(m->h = CreatePopupMenu());
+}
+
 #define ffui_menu_show(m, x, y, hwnd) \
 	TrackPopupMenuEx((m)->h, 0, x, y, hwnd, NULL)
+
+static inline void ffui_menu_popup_under(ffui_menu *m, ffui_ctl *ctl) {
+	RECT r;
+	GetWindowRect(ctl->h, &r);
+	TrackPopupMenuEx(m->h, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON, r.left, r.bottom, GetParent(ctl->h), NULL);
+}
 
 
 typedef MENUITEMINFOW ffui_menuitem;
@@ -145,4 +156,18 @@ static inline int ffui_menu_destroy(ffui_menu *m) {
 		m->h = 0;
 	}
 	return r;
+}
+
+static inline void ffui_menu_itemadd(ffui_menu *m, const char *text, uint action_id) {
+	wchar_t ws[256], *w;
+	if (!(w = ffsz_alloc_buf_utow(ws, FF_COUNT(ws), text)))
+		return;
+	MENUITEMINFOW mi = {};
+	mi.cbSize = sizeof(MENUITEMINFOW);
+	mi.fMask = MIIM_STRING | MIIM_ID;
+	mi.dwTypeData = w;
+	mi.wID = action_id;
+	InsertMenuItemW(m->h, -1, 1, &mi);
+	if (w != ws)
+		ffmem_free(w);
 }
